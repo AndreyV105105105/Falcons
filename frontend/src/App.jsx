@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import Generator from './screens/Generator';
 import Auth from './screens/Auth';
 import Registration from './screens/Registration';
@@ -37,7 +37,6 @@ function App() {
     setScreen('generator');
   };
 
-  // Функция для переключения чекбоксов
   const toggleSetting = (name) => {
     setSettings(prev => ({ ...prev, [name]: !prev[name] }));
   };
@@ -48,17 +47,14 @@ function App() {
   return (
     <div className="min-h-screen bg-neutral-100 flex flex-col items-center justify-center p-4 font-sans text-neutral-900">
       
-      {/* Экран Входа */}
       {screen === 'auth' && (
         <Auth setScreen={setScreen} authInputStyle={authInputStyle}/>
       )}
 
-      {/* Экран Регистрации */}
       {screen === 'registration' && (
         <Registration setScreen={setScreen} authInputStyle={authInputStyle}/>
       )}
 
-      {/* Экран Генератора */}
       {screen === 'generator' && (
         <Generator 
           setScreen={setScreen}
@@ -71,12 +67,10 @@ function App() {
         />
       )}
 
-      {/* Экран Списка Паролей */}
       {screen === 'my_passwords' && (
         <Passwords setScreen={setScreen} savedPasswords={savedPasswords}/>
       )}
 
-      {/* Экран Пресетов */}
       {screen === 'my_presets' && (
         <Presets
           setScreen={setScreen} 

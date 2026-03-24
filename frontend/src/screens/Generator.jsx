@@ -1,17 +1,30 @@
+import { generatePassword, handleCopy } from "../utils/passwordUtils";
+import { useState } from "react";
+
 const Generator = ({ 
   length, setLength, settings, toggleSetting, 
-  isMenuOpen, setIsMenuOpen, setScreen 
+  isMenuOpen, setIsMenuOpen, setScreen
 }) => {
+  const [password, setPassword] = useState("Kj9!pL2mN");
+  const [copied, setCopied] = useState(false);
+  const handleGenerate = () => {
+    const newPass = generatePassword(length, settings);
+    setPassword(newPass);
+  }
+  
+  const onCopyClick = () => {
+    handleCopy(password, setCopied);
+  };
+  
   return (
     <div className="bg-white p-6 rounded-[40px] shadow-2xl w-full max-w-sm flex flex-col items-center border border-neutral-200 relative">
 
           <div className="w-full flex justify-between items-center mb-8 px-2 relative">
-          {/* Иконка щита */}
+
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
 
-          {/* Кнопка гамбургер */}
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="flex flex-col gap-1.5 cursor-pointer z-20"
@@ -21,7 +34,6 @@ const Generator = ({
             <div className={`w-8 h-0.5 bg-black transition-all ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
           </button>
 
-          {/* ВЫПАДАЮЩЕЕ МЕНЮ */}
           {isMenuOpen && (
             <div className="absolute top-10 right-0 w-48 bg-white border-2 border-black rounded-2xl shadow-xl z-10 overflow-hidden animate-in fade-in zoom-in duration-200">
               <div className="flex flex-col">
@@ -36,19 +48,24 @@ const Generator = ({
           )}
         </div>
 
-          <h1 className="font-oswald text-[32px] mb-6 uppercase tracking-tight text-center">Генератор пароля</h1>
+        <h1 className="font-oswald text-[32px] mb-6 uppercase tracking-tight text-center">Генератор пароля</h1>
 
-        {/* КОНТЕЙНЕР ДЛЯ ПОЛЯ И КНОПКИ */}
         <div className="w-full flex items-center gap-2 mb-1">
           <div className="relative flex-1 group">
             <input 
               readOnly 
-              value="Kj9!pL2mN" 
+              value={password}  
               className="w-full p-4 border-2 border-neutral-700 rounded-2xl bg-white font-mono text-lg font-bold text-center" 
             />
           </div>
 
-          <button className="p-3 border-2 border-black rounded-2xl hover:bg-neutral-100 transition-colors flex flex-col items-center justify-center min-w-[64px] h-[60px] cursor-pointer">
+          {copied && (
+            <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-xs py-2 px-4 rounded-lg animate-in fade-in slide-in-from-bottom-2">
+              Скопировано!
+            </span>
+          )}
+
+          <button onClick={onCopyClick} className="p-3 border-2 border-black rounded-2xl hover:bg-neutral-100 transition-colors flex flex-col items-center justify-center min-w-[64px] h-[60px] cursor-pointer">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -72,7 +89,7 @@ const Generator = ({
             <input 
               type="range" 
               min="5" 
-              max="100" 
+              max="25" 
               value={length} 
               onChange={(e) => setLength(parseInt(e.target.value))} 
               className="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-black"
@@ -80,11 +97,10 @@ const Generator = ({
             
             <div className="flex justify-between mt-1 text-[16px] font-oswald font-bold text-400 uppercase tracking-tighter">
               <span>5</span>
-              <span>100</span>
+              <span>25</span>
             </div>
           </div>
 
-          {/* Список чекбоксов */}
           <div className="w-full space-y-4 mb-8">
             {[
               { id: 'lowercase', label: 'Строчные' },
@@ -115,7 +131,7 @@ const Generator = ({
 
           <button className="font-oswald text-xs font-bold uppercase tracking-widest mb-6 text-[16px] cursor-pointer">Сохранить настройку</button>
           
-          <button className="font-oswald w-full bg-black text-white py-4 rounded-[2rem] text-[16px] font-bold uppercase tracking-widest shadow-xl active:scale-95 transition-all cursor-pointer">Сгенерировать</button>
+          <button onClick={handleGenerate} className="font-oswald w-full bg-black text-white py-4 rounded-[2rem] text-[16px] font-bold uppercase tracking-widest shadow-xl active:scale-95 transition-all cursor-pointer">Сгенерировать</button>
         </div>
   );
 };

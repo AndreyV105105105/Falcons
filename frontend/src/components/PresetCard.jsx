@@ -1,5 +1,3 @@
-import React from 'react';
-
 const PresetCard = ({ item, onApply }) => {
   return (
     <div className="p-4 border-2 border-neutral-100 rounded-3xl hover:border-black transition-colors group bg-white">
