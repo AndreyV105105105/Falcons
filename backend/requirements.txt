@@ -2,3 +2,9 @@ ydb
 bcrypt
 python-dotenv
 requests
+Flask==3.0.2
+Flask-Cors==4.0.0
+python-dotenv==1.0.1
+PyJWT==2.8.0
+werkzeug==3.0.1
+ydb==3.3.0
