@@ -17,6 +17,7 @@ Thumbs.db
 # Frontend (React / Node.js)
 /frontend/node_modules/
 /frontend/build/
+frontend/.vite/
 /frontend/dist/
 /frontend/.eslintcache
 npm-debug.log*
