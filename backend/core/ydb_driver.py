@@ -18,7 +18,6 @@ def init_db():
     global _driver, _pool
 
     if _pool is not None:
-        # Уже инициализировано (warm start)
         return _driver, _pool
 
     credentials = ydb.credentials_from_env_variables()
@@ -30,62 +29,81 @@ def init_db():
     )
     _driver = ydb.Driver(driver_config)
     _driver.wait(timeout=15)
-    _pool = ydb.SessionPool(driver)
+    _pool = ydb.SessionPool(_driver)
 
     return _driver, _pool
 
 def find_user_by_email(email):
-    # TODO: Здесь будет YQL-запрос к YDB от Миши
-    # Пока возвращаем None, как будто такого юзера нет
-    return None
-
-def create_user_in_db(email, password_hash):
-    # TODO: Здесь будет YQL-запрос к YDB от Миши
-    # Пока просто генерируем фейковый ID для теста
-    return str(uuid.uuid4())
-
-
-
-def test_write_read():
     """
-    ТЕСТОВАЯ ФУНКЦИЯ.
+    Найти пользователя по email.
 
-    Что делает:
-    1. Вставляет тестовую запись в таблицу users
-    2. Читает её обратно
-    3. Возвращает результат (успех/ошибка)
+    Возвращает dict с данными пользователя или None, если пользователь не найден
     """
+
+    if _pool is None:
+        init_db()
 
     def query_callee(session):
-        # ВСТАВКА тестовой строки
-        session.transaction(ydb.SerializableReadWrite()).execute(
-            """
-            DECLARE $id AS String;
-            DECLARE $username AS String;
+        query = """
+        DECLARE $email AS String;
 
-            INSERT INTO users (id, username, password_hash, keyword_hash, keyword_salt, createdAt)
-            VALUES ($id, $username, 'test_hash', 'test_hash', 'test_salt', CurrentUtcTimestamp());
-            """,
-            {
-                "$id": "test-id-123",
-                "$username": "test_user_week1",
-            },
-            commit_tx=True,
-        )
-
-        # ЧТЕНИЕ тестовой строки
+        SELECT id, username, password_hash, keyword_hash, keyword_salt, createdAt
+        FROM users
+        WHERE username = $email;
+        """
         result_sets = session.transaction(ydb.SerializableReadWrite()).execute(
-            """
-            DECLARE $username AS String;
-
-            SELECT * FROM users WHERE username = $username;
-            """,
-            {"$username": "test_user_week1"},
+            query,
+            {"$email": email},
             commit_tx=True,
         )
 
         if result_sets and result_sets[0].rows:
-            return {"status": "success", "data": result_sets[0].rows[0]}
-        return {"status": "error", "message": "Data not found"}
+            row = result_sets[0].rows[0]
+            return {
+                "id": row.id,
+                "email": row.username,
+                "password_hash": row.password_hash,
+                "keyword_hash": row.keyword_hash,
+                "keyword_salt": row.keyword_salt,
+                "createdAt": row.createdAt
+            }
+        return None
 
-    return pool.retry_operation_sync(query_callee)
+    return _pool.retry_operation_sync(query_callee)
+
+def create_user_in_db(email, password_hash, keyword_hash=None, keyword_salt=None):
+    """
+    Создать нового пользователя в БД.
+    Возвращает: user_id (строка UUID)
+    """
+    if _pool is None:
+        init_db()
+
+    def query_callee(session):
+        user_id = str(uuid.uuid4())
+
+        query = """
+            DECLARE $id AS String;
+            DECLARE $email AS String;
+            DECLARE $password_hash AS String;
+            DECLARE $keyword_hash AS String;
+            DECLARE $keyword_salt AS String;
+
+            INSERT INTO users (id, username, password_hash, keyword_hash, keyword_salt, createdAt)
+            VALUES ($id, $email, $password_hash, $keyword_hash, $keyword_salt, CurrentUtcTimestamp());
+        """
+
+        session.transaction(ydb.SerializableReadWrite()).execute(
+            query,
+            {
+                "$id": user_id,
+                "$email": email,
+                "$password_hash": password_hash,
+                "$keyword_hash": keyword_hash or "",
+                "$keyword_salt": keyword_salt or "",
+            },
+            commit_tx=True,
+            )
+        return user_id
+
+    return _pool.retry_operation_sync(query_callee)
