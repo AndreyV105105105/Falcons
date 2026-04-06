@@ -25,6 +25,16 @@ paths:
       responses:
         '200':
           description: User registered successfully
+    options:
+      x-yc-apigateway-integration:
+        type: dummy
+        content:
+          '*': ""
+        http_code: 200
+        http_headers:
+          Access-Control-Allow-Origin: "*"
+          Access-Control-Allow-Methods: "POST, OPTIONS"
+          Access-Control-Allow-Headers: "Content-Type"
   /auth/login:
     post:
       x-yc-apigateway-integration:
@@ -35,3 +45,13 @@ paths:
       responses:
         '200':
           description: Login successful
+      options:
+      x-yc-apigateway-integration:
+        type: dummy
+        content:
+          '*': ""
+        http_code: 200
+        http_headers:
+          Access-Control-Allow-Origin: "*"
+          Access-Control-Allow-Methods: "POST, OPTIONS"
+          Access-Control-Allow-Headers: "Content-Type"
