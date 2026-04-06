@@ -4,15 +4,41 @@ Thumbs.db
 .idea/
 .vscode/
 *.swp
+*.swo
+*~
 *.log
 
-# Секреты и Конфигурации (КРИТИЧНО!)
+# Секреты и Конфигурации
 .env
 .env.*
 !.env.example
 *.pem
 *.key
+*.crt
+yc-config.yaml
+*.yc-credentials
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Виртуальные окружения
+.venv/
+venv/
+env/
+backend/venv/
+backend/env/
 
 # Frontend (React / Node.js)
 /frontend/node_modules/
@@ -24,16 +50,19 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Backend (Python / Flask)
-__pycache__/
-*.py[cod]
-*$py.class
-/backend/venv/
-/backend/env/
+# Backend (Python)
 /backend/flask_session/
 /backend/instance/
-.pytest_cache/
+/backend/logs/
+logs/
 
 # База Данных
 *.sqlite3
 *.db
+database/*.db
+
+# Документация и сборка
+docs/_build/
+dist/
+build/
+*.egg-info/
