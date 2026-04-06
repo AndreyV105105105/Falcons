@@ -1,0 +1,37 @@
+openapi: 3.0.0
+info:
+  title: Password Generator API
+  version: 1.0.0
+servers:
+- url: https://d5d5sl318gmabr3ciul9.z7jmlavt.apigw.yandexcloud.net
+paths:
+  /hello:
+    get:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: d4e6vkfdok396jglajm0
+        service_account_id: ajemm2m5ho2c0e2rtqli
+        http_method: POST
+      responses:
+        '200':
+          description: OK
+  /auth/register:
+    post:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: d4e9nfcg5ki4bjnjolji
+        service_account_id: ajemm2m5ho2c0e2rtqli
+        http_method: POST
+      responses:
+        '200':
+          description: User registered successfully
+  /auth/login:
+    post:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: d4e9nfcg5ki4bjnjolji
+        service_account_id: ajemm2m5ho2c0e2rtqli
+        http_method: POST
+      responses:
+        '200':
+          description: Login successful
