@@ -91,6 +91,7 @@ def create_user_in_db(email, password_hash, keyword_hash=None, keyword_salt=None
             VALUES ($id, $email, $password_hash, $keyword_hash, $keyword_salt, CurrentUtcTimestamp());
         """
 
+
         # кодируем все строки в байты
         session.transaction(ydb.SerializableReadWrite()).execute(
             query,

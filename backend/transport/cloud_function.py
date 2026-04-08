@@ -9,7 +9,7 @@ def handler(event, context):
         # Ловим метод запроса (POST, GET, OPTIONS)
         http_method = event.get('httpMethod', '')
 
-        # ОБРАБОТКА CORS (Preflight-запрос от браузера)
+        # ОБРАБОТКА CORS  (Preflight-запрос от браузера)
         if http_method == 'OPTIONS':
             return {
                 'statusCode': 200,
