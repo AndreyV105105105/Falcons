@@ -1,0 +1,57 @@
+openapi: 3.0.0
+info:
+  title: Password Generator API
+  version: 1.0.0
+servers:
+- url: https://d5d5sl318gmabr3ciul9.z7jmlavt.apigw.yandexcloud.net
+paths:
+  /hello:
+    get:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: d4e6vkfdok396jglajm0
+        service_account_id: ajemm2m5ho2c0e2rtqli
+        http_method: POST
+      responses:
+        '200':
+          description: OK
+  /auth/register:
+    post:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: d4e9nfcg5ki4bjnjolji
+        service_account_id: ajemm2m5ho2c0e2rtqli
+        http_method: POST
+      responses:
+        '200':
+          description: User registered successfully
+    options:
+      x-yc-apigateway-integration:
+        type: dummy
+        content:
+          '*': ""
+        http_code: 200
+        http_headers:
+          Access-Control-Allow-Origin: "*"
+          Access-Control-Allow-Methods: "POST, OPTIONS"
+          Access-Control-Allow-Headers: "Content-Type"
+  /auth/login:
+    post:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: d4e9nfcg5ki4bjnjolji
+        service_account_id: ajemm2m5ho2c0e2rtqli
+        http_method: POST
+      responses:
+        '200':
+          description: Login successful
+      options:
+      x-yc-apigateway-integration:
+        type: dummy
+        content:
+          '*': ""
+        http_code: 200
+        http_headers:
+          Access-Control-Allow-Origin: "*"
+          Access-Control-Allow-Methods: "POST, OPTIONS"
+          Access-Control-Allow-Headers: "Content-Type"
