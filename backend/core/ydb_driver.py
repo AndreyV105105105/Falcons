@@ -36,10 +36,7 @@ def init_db():
 def find_user_by_email(email):
     """
     Найти пользователя по email.
-
-    Возвращает dict с данными пользователя или None, если пользователь не найден
     """
-
     if _pool is None:
         init_db()
 
@@ -51,18 +48,19 @@ def find_user_by_email(email):
         FROM users
         WHERE username = $email;
         """
+        # ТУТ ИСПРАВЛЕНИЕ: кодируем строку в байты
         result_sets = session.transaction(ydb.SerializableReadWrite()).execute(
             query,
-            {"$email": email},
+            {"$email": email.encode('utf-8')},
             commit_tx=True,
         )
 
         if result_sets and result_sets[0].rows:
             row = result_sets[0].rows[0]
             return {
-                "id": row.id,
-                "email": row.username,
-                "password_hash": row.password_hash,
+                "id": row.id.decode('utf-8') if isinstance(row.id, bytes) else row.id,
+                "email": row.username.decode('utf-8') if isinstance(row.username, bytes) else row.username,
+                "password_hash": row.password_hash.decode('utf-8') if isinstance(row.password_hash, bytes) else row.password_hash,
                 "keyword_hash": row.keyword_hash,
                 "keyword_salt": row.keyword_salt,
                 "createdAt": row.createdAt
@@ -71,10 +69,10 @@ def find_user_by_email(email):
 
     return _pool.retry_operation_sync(query_callee)
 
+
 def create_user_in_db(email, password_hash, keyword_hash=None, keyword_salt=None):
     """
     Создать нового пользователя в БД.
-    Возвращает: user_id (строка UUID)
     """
     if _pool is None:
         init_db()
@@ -93,14 +91,15 @@ def create_user_in_db(email, password_hash, keyword_hash=None, keyword_salt=None
             VALUES ($id, $email, $password_hash, $keyword_hash, $keyword_salt, CurrentUtcTimestamp());
         """
 
+        # кодируем все строки в байты
         session.transaction(ydb.SerializableReadWrite()).execute(
             query,
             {
-                "$id": user_id,
-                "$email": email,
-                "$password_hash": password_hash,
-                "$keyword_hash": keyword_hash or "",
-                "$keyword_salt": keyword_salt or "",
+                "$id": user_id.encode('utf-8'),
+                "$email": email.encode('utf-8'),
+                "$password_hash": password_hash.encode('utf-8'),
+                "$keyword_hash": (keyword_hash or "").encode('utf-8'),
+                "$keyword_salt": (keyword_salt or "").encode('utf-8'),
             },
             commit_tx=True,
             )
