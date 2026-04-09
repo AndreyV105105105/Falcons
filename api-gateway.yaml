@@ -15,6 +15,7 @@ paths:
       responses:
         '200':
           description: OK
+
   /auth/register:
     post:
       x-yc-apigateway-integration:
@@ -35,6 +36,7 @@ paths:
           Access-Control-Allow-Origin: "*"
           Access-Control-Allow-Methods: "POST, OPTIONS"
           Access-Control-Allow-Headers: "Content-Type"
+
   /auth/login:
     post:
       x-yc-apigateway-integration:
@@ -45,7 +47,7 @@ paths:
       responses:
         '200':
           description: Login successful
-      options:
+    options:
       x-yc-apigateway-integration:
         type: dummy
         content:
