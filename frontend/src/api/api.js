@@ -31,11 +31,11 @@ const authRequest = async (endpoint, login, password) => {
 };
 
 export const registerUser = (login, password) => {
-    return authRequest('/register', login, password);
+    return authRequest('/auth/register', login, password);
 };
 
 export const loginUser = (login, password) => {
-    return authRequest('/login', login, password);
+    return authRequest('/auth/login', login, password);
 };
 
 export const logoutUser = () => {
