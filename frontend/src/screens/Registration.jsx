@@ -2,10 +2,11 @@ import { useState } from "react";
 import { registerUser } from "../api/api";
 
 const Registration = ({authInputStyle, setScreen}) => {
-    const [login, setLogin] = useState();
-    const [password, setPassword] = useState();
+    const [login, setLogin] = useState("");
+    const [password, setPassword] = useState("");
 
     const handleRegister = async () => {
+        console.log("Sending data:", { login, password });
         try {
             await registerUser(login, password);
             setScreen('generator'); 
@@ -18,8 +19,8 @@ const Registration = ({authInputStyle, setScreen}) => {
         <div className="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-sm flex flex-col items-center border border-neutral-200">
             <h1 className="font-oswald text-[32px] mb-10 uppercase tracking-tighter leading-none text-center">Регистрация</h1>
             <div className="w-full space-y-3">
-                <input type="text" placeholder="ЛОГИН" className={authInputStyle} onChange={(evt) => setLogin(evt.target.value)} />
-                <input type="password" placeholder="ПАРОЛЬ" className={authInputStyle} onChange={(evt) => setPassword(evt.target.value)}/>
+                <input type="text" placeholder="ЛОГИН" className={authInputStyle} onChange={(e) => setLogin(e.target.value)} />
+                <input type="password" placeholder="ПАРОЛЬ" className={authInputStyle} onChange={(e) => setPassword(e.target.value)}/>
                 
             </div>
             <button 

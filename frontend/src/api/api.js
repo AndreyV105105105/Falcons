@@ -1,6 +1,6 @@
 const API_GATEWAY_URL = 'https://d5d5sl318gmabr3ciul9.z7jmlavt.apigw.yandexcloud.net';
 
-const authRequest = async (endpoint, login, password) => {
+const authRequest = async (endpoint, email, password) => {
     try {
         const response = await fetch(`${API_GATEWAY_URL}${endpoint}`, {
             method: 'POST',
@@ -8,7 +8,7 @@ const authRequest = async (endpoint, login, password) => {
                 'Content-Type': 'application/json',
                 
             },
-            body: JSON.stringify({ login, password }),
+            body: JSON.stringify({ email, password }),
         })
 
         const data = await response.json();
@@ -30,12 +30,12 @@ const authRequest = async (endpoint, login, password) => {
     }
 };
 
-export const registerUser = (login, password) => {
-    return authRequest('/auth/register', login, password);
+export const registerUser = (email, password) => {
+    return authRequest('/auth/register', email, password);
 };
 
-export const loginUser = (login, password) => {
-    return authRequest('/auth/login', login, password);
+export const loginUser = (email, password) => {
+    return authRequest('/auth/login', email, password);
 };
 
 export const logoutUser = () => {
