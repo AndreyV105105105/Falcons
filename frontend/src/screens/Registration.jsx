@@ -3,15 +3,18 @@ import { registerUser } from "../api/api";
 
 const Registration = ({authInputStyle, setScreen}) => {
     const [login, setLogin] = useState("");
+    const [loading, setLoading] = useState(false);
     const [password, setPassword] = useState("");
 
     const handleRegister = async () => {
-        console.log("Sending data:", { login, password });
+        setLoading(true);
         try {
             await registerUser(login, password);
             setScreen('generator'); 
         } catch (err) {
             alert(err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -24,10 +27,11 @@ const Registration = ({authInputStyle, setScreen}) => {
                 
             </div>
             <button 
+            disabled={loading}
             onClick={handleRegister}
-            className="font-oswald w-full bg-black text-white py-5 rounded-2xl mt-10 text-base font-bold uppercase hover:bg-neutral-800 active:scale-95 transition-all tracking-widest cursor-pointer"
+            className={loading ? "opacity-50 font-oswald w-full bg-black text-white py-5 rounded-2xl mt-10 text-base font-bold uppercase hover:bg-neutral-800 active:scale-95 transition-all tracking-widest": "font-oswald w-full bg-black text-white py-5 rounded-2xl mt-10 text-base font-bold uppercase hover:bg-neutral-800 active:scale-95 transition-all tracking-widest cursor-pointer"}
             >
-            Регистрация
+            Зарегистрироваться
             </button>
         </div>
     )

@@ -4,13 +4,20 @@ import { loginUser } from "../api/api";
 const Auth = ({authInputStyle, setScreen}) => {
     const [login, setLogin] = useState();
         const [password, setPassword] = useState();
+        const [loading, setLoading] = useState(false);
     
         const handleLogin = async () => {
+            setLoading(true);
             try {
-                await loginUser(login, password);
-                setScreen('generator'); 
+                const response = await loginUser(login, password);
+                if (response.token) {
+                    localStorage.setItem('jwt_token', response.token);
+                        setScreen('generator');
+                }
             } catch (err) {
                 alert(err.message);
+            } finally {
+                setLoading(false);
             }
         };
     return (
@@ -20,9 +27,10 @@ const Auth = ({authInputStyle, setScreen}) => {
                 <input type="text" placeholder="ЛОГИН" className={authInputStyle} onChange={(evt) => setLogin(evt.target.value)}/>
                 <input type="password" placeholder="ПАРОЛЬ" className={authInputStyle} onChange={(evt) => setPassword(evt.target.value)}/>
             </div>
-            <button 
+            <button
+            disabled={loading} 
             onClick={handleLogin}
-            className="font-oswald w-full bg-black text-white py-5 rounded-2xl mt-10 text-base font-bold uppercase hover:bg-neutral-800 active:scale-95 transition-all tracking-widest cursor-pointer"
+            className={loading ? "opacity-50 font-oswald w-full bg-black text-white py-5 rounded-2xl mt-10 text-base font-bold uppercase hover:bg-neutral-800 active:scale-95 transition-all tracking-widest" : "font-oswald w-full bg-black text-white py-5 rounded-2xl mt-10 text-base font-bold uppercase hover:bg-neutral-800 active:scale-95 transition-all tracking-widest cursor-pointer"}
             >
             Войти
             </button>
