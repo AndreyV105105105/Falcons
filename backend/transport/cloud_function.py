@@ -1,7 +1,7 @@
 import json
 import os
 from core.auth_service import register_user_logic, login_user_logic
-
+from core.generator_service import generate_logic
 
 def handler(event, context):
     """Единая точка входа для авторизации в Yandex Cloud"""
@@ -30,6 +30,8 @@ def handler(event, context):
             result = register_user_logic(body.get('email'), body.get('password'), secret_key)
         elif '/login' in path:
             result = login_user_logic(body.get('email'), body.get('password'), secret_key)
+        elif '/generate' in path:
+            result = generate_logic(body)
         else:
             return {
                 'statusCode': 404,

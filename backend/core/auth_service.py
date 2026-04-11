@@ -28,8 +28,6 @@ def login_user_logic(email, password, secret_key):
 
     user = find_user_by_email(email)
 
-    # Пока Миша не доделал YDB, тут будет заглушка падать,
-    # но логика проверки пароля будет выглядеть так:
     if not user or not check_password_hash(user['password_hash'], password):
         return {"error": "Неверный email или пароль", "status": 401}
 
