@@ -1,4 +1,5 @@
-import { generatePassword, handleCopy } from "../utils/passwordUtils";
+import { handleCopy } from "../utils/passwordUtils";
+import { getPassword } from "../api/api";
 import { useState } from "react";
 
 const Generator = ({ 
@@ -7,11 +8,22 @@ const Generator = ({
 }) => {
   const [password, setPassword] = useState("Kj9!pL2mN");
   const [copied, setCopied] = useState(false);
-  const handleGenerate = () => {
-    const newPass = generatePassword(length, settings);
-    setPassword(newPass);
-  }
-  
+  const handleGenerate = async () => {
+    try {
+      const data = await getPassword({
+        length: 15,
+        use_upper: true, // Map 'uppercase' to 'use_upper'
+        use_digits: true, 
+        use_special: true, // Map 'symbols' to 'use_special'
+        exclude_similar: false //
+      });
+      
+      setPassword(data.password); //
+      console.log("Password strength:", data.entropy.level); //
+    } catch (err) {
+      console.error("Cloud generation failed:", err);
+    }
+  };
   const onCopyClick = () => {
     handleCopy(password, setCopied);
   };

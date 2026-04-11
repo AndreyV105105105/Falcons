@@ -30,6 +30,17 @@ const authRequest = async (endpoint, email, password) => {
     }
 };
 
+export const getPassword = async (settings) => {
+  const response = await fetch(`${API_GATEWAY_URL}/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(settings)
+  });
+  
+  if (!response.ok) throw new Error('Generation failed');
+  return await response.json(); // Returns {password: "...", entropy: {...}}
+};
+
 export const registerUser = (email, password) => {
     return authRequest('/auth/register', email, password);
 };
