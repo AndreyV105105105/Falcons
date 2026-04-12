@@ -7,19 +7,20 @@ const Generator = ({
   isMenuOpen, setIsMenuOpen, setScreen
 }) => {
   const [password, setPassword] = useState("Kj9!pL2mN");
+  const [difficulty, setDifficulty] = useState("Средний");
   const [copied, setCopied] = useState(false);
   const handleGenerate = async () => {
     try {
       const data = await getPassword({
-        length: 15,
-        use_upper: true, // Map 'uppercase' to 'use_upper'
-        use_digits: true, 
-        use_special: true, // Map 'symbols' to 'use_special'
-        exclude_similar: false //
+        length: length,
+        use_upper: settings.use_upper, 
+        use_digits: settings.use_digits, 
+        use_special: settings.use_special,
+        exclude_similar: settings.exclude_similar
       });
       
-      setPassword(data.password); //
-      console.log("Password strength:", data.entropy.level); //
+      setPassword(data.password); 
+      setDifficulty(data.entropy.level);
     } catch (err) {
       console.error("Cloud generation failed:", err);
     }
@@ -93,7 +94,7 @@ const Generator = ({
           </button>
         </div>
 
-        <span className="text-red-400 font-oswald text-xs font-bold uppercase tracking-widest self-start ml-2 mb-4">Слабый пароль</span>
+        <span className="font-oswald text-xs font-bold uppercase tracking-widest self-start ml-2 mb-4">{difficulty}</span>
 
           <div className="w-full mb-6">
             <div className="flex justify-center items-center mb-2 gap-4">
@@ -123,11 +124,11 @@ const Generator = ({
 
           <div className="w-full space-y-4 mb-8">
             {[
-              { id: 'lowercase', label: 'Строчные' },
-              { id: 'uppercase', label: 'Прописные' },
-              { id: 'symbols', label: 'Спецсимволы' },
-              { id: 'excludeSimilar', label: 'Исключить похожие символы' }
-            ].map((item, i) => (
+              { id: 'use_digits', label: 'Цифры ' },
+              { id: 'use_upper', label: 'Прописные' },
+              { id: 'use_special', label: 'Спецсимволы' },
+              { id: 'exclude_similar', label: 'Исключить похожие символы' }
+            ].map((item) => (
               <label 
                 key={item.id} 
                 className="flex items-center gap-3 cursor-pointer group"
