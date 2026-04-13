@@ -5,8 +5,17 @@ from .ydb_driver import find_user_by_email, create_user_in_db
 
 
 def register_user_logic(email, password, secret_key):
+    if not isinstance(email, str):
+        return {"error": f"БАГ ДАННЫХ! email пришел как {type(email)}. Содержимое: {email}", "status": 400}
+
+    if not isinstance(password, str):
+        return {"error": f"БАГ ДАННЫХ! пароль пришел как {type(password)}", "status": 400}
+
     if not email or not password:
         return {"error": "Отсутствует email или пароль", "status": 400}
+
+    if not isinstance(email, str) or not isinstance(password, str):
+        return {"error": "Email и пароль должны быть обычным текстом", "status": 400}
 
     if find_user_by_email(email):
         return {"error": "Пользователь с таким email уже существует", "status": 400}
@@ -23,6 +32,12 @@ def register_user_logic(email, password, secret_key):
 
 
 def login_user_logic(email, password, secret_key):
+    if not isinstance(email, str):
+        return {"error": f"БАГ ДАННЫХ! email пришел как {type(email)}. Содержимое: {email}", "status": 400}
+
+    if not isinstance(password, str):
+        return {"error": f"БАГ ДАННЫХ! пароль пришел как {type(password)}", "status": 400}
+
     if not email or not password:
         return {"error": "Отсутствует email или пароль", "status": 400}
 

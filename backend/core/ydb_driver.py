@@ -10,6 +10,7 @@ _pool = None
 YDB_ENDPOINT = os.getenv("YDB_ENDPOINT")
 YDB_DATABASE = os.getenv("YDB_DATABASE")
 
+
 def init_db():
     """
     Инициализируем подключение к YDB.
@@ -33,6 +34,7 @@ def init_db():
 
     return _driver, _pool
 
+
 def find_user_by_email(email):
     """
     Найти пользователя по email.
@@ -41,26 +43,29 @@ def find_user_by_email(email):
         init_db()
 
     def query_callee(session):
-        query = """
-        DECLARE $email AS String;
+        query_text = """
+        DECLARE $email AS Utf8;
 
         SELECT id, username, password_hash, keyword_hash, keyword_salt, createdAt
         FROM users
         WHERE username = $email;
         """
-        # ТУТ ИСПРАВЛЕНИЕ: кодируем строку в байты
+        # Компилируем запрос перед выполнением
+        prepared_query = session.prepare(query_text)
+
         result_sets = session.transaction(ydb.SerializableReadWrite()).execute(
-            query,
-            {"$email": email.encode('utf-8')},
+            prepared_query,
+            {"$email": email},
             commit_tx=True,
         )
 
         if result_sets and result_sets[0].rows:
             row = result_sets[0].rows[0]
+            # YDB сама вернет нормальные строки при использовании Utf8
             return {
-                "id": row.id.decode('utf-8') if isinstance(row.id, bytes) else row.id,
-                "email": row.username.decode('utf-8') if isinstance(row.username, bytes) else row.username,
-                "password_hash": row.password_hash.decode('utf-8') if isinstance(row.password_hash, bytes) else row.password_hash,
+                "id": row.id,
+                "email": row.username,
+                "password_hash": row.password_hash,
                 "keyword_hash": row.keyword_hash,
                 "keyword_salt": row.keyword_salt,
                 "createdAt": row.createdAt
@@ -80,30 +85,31 @@ def create_user_in_db(email, password_hash, keyword_hash=None, keyword_salt=None
     def query_callee(session):
         user_id = str(uuid.uuid4())
 
-        query = """
-            DECLARE $id AS String;
-            DECLARE $email AS String;
-            DECLARE $password_hash AS String;
-            DECLARE $keyword_hash AS String;
-            DECLARE $keyword_salt AS String;
+        query_text = """
+            DECLARE $id AS Utf8;
+            DECLARE $email AS Utf8;
+            DECLARE $password_hash AS Utf8;
+            DECLARE $keyword_hash AS Utf8;
+            DECLARE $keyword_salt AS Utf8;
 
             INSERT INTO users (id, username, password_hash, keyword_hash, keyword_salt, createdAt)
             VALUES ($id, $email, $password_hash, $keyword_hash, $keyword_salt, CurrentUtcTimestamp());
         """
 
+        # Компилируем запрос
+        prepared_query = session.prepare(query_text)
 
-        # кодируем все строки в байты
         session.transaction(ydb.SerializableReadWrite()).execute(
-            query,
+            prepared_query,
             {
-                "$id": user_id.encode('utf-8'),
-                "$email": email.encode('utf-8'),
-                "$password_hash": password_hash.encode('utf-8'),
-                "$keyword_hash": (keyword_hash or "").encode('utf-8'),
-                "$keyword_salt": (keyword_salt or "").encode('utf-8'),
+                "$id": user_id,
+                "$email": email,
+                "$password_hash": password_hash,
+                "$keyword_hash": keyword_hash or "",
+                "$keyword_salt": keyword_salt or "",
             },
             commit_tx=True,
-            )
+        )
         return user_id
 
     return _pool.retry_operation_sync(query_callee)
@@ -112,23 +118,6 @@ def create_user_in_db(email, password_hash, keyword_hash=None, keyword_salt=None
 def save_user_preset(user_id, profile_name, settings):
     """
     Сохранение настроек пользователя.
-
-    Args:
-        user_id (str): ID пользователя
-        profile_name (str): Название пресета (например, "Для банков" или "Для соцсетей")
-        settings (dict): Настройки генерации
-            {
-                "password_length": 16,
-                "use_uppercase": True,
-                "use_lowercase": True,
-                "use_numbers": True,
-                "use_symbols": False,
-                "exclude_ambiguous": True,
-                "custom_symbols": ""
-            }
-
-    Returns:
-        str: preset_id (UUID)
     """
     if _pool is None:
         init_db()
@@ -136,17 +125,17 @@ def save_user_preset(user_id, profile_name, settings):
     def query_callee(session):
         preset_id = str(uuid.uuid4())
 
-        query = """
-        DECLARE $id AS String;
-        DECLARE $user_id AS String;
-        DECLARE $profile_name AS String;
+        query_text = """
+        DECLARE $id AS Utf8;
+        DECLARE $user_id AS Utf8;
+        DECLARE $profile_name AS Utf8;
         DECLARE $password_length AS Int32;
         DECLARE $use_uppercase AS Bool;
         DECLARE $use_lowercase AS Bool;
         DECLARE $use_numbers AS Bool;
         DECLARE $use_symbols AS Bool;
         DECLARE $exclude_ambiguous AS Bool;
-        DECLARE $custom_symbols AS String;
+        DECLARE $custom_symbols AS Utf8;
 
         INSERT INTO user_settings (
             id, user_id, profile_name, password_length,
@@ -160,8 +149,11 @@ def save_user_preset(user_id, profile_name, settings):
         );
         """
 
+        # Компилируем запрос
+        prepared_query = session.prepare(query_text)
+
         session.transaction(ydb.SerializableReadWrite()).execute(
-            query,
+            prepared_query,
             {
                 "$id": preset_id,
                 "$user_id": user_id,
@@ -184,26 +176,23 @@ def save_user_preset(user_id, profile_name, settings):
 def get_user_presets(user_id):
     """
     Получить все пресеты пользователя.
-
-    Args:
-        user_id (str): ID пользователя
-
-    Returns:
-        list: Список пресетов (в формате dict)
     """
     if _pool is None:
         init_db()
 
     def query_callee(session):
-        query = """
-        DECLARE $user_id AS String;
+        query_text = """
+        DECLARE $user_id AS Utf8;
 
         SELECT * FROM user_settings
         WHERE user_id = $user_id;
         """
 
+        # Компилируем запрос
+        prepared_query = session.prepare(query_text)
+
         result_sets = session.transaction(ydb.SerializableReadWrite()).execute(
-            query,
+            prepared_query,
             {"$user_id": user_id},
             commit_tx=True,
         )
@@ -233,28 +222,24 @@ def get_user_presets(user_id):
 def delete_user_preset(preset_id, user_id):
     """
     Удалить пресет пользователя.
-
-    Args:
-        preset_id (str): ID пресета
-        user_id (str): ID пользователя (для проверки прав)
-
-    Returns:
-        bool: True если удалено
     """
     if _pool is None:
         init_db()
 
     def query_callee(session):
-        query = """
-        DECLARE $id AS String;
-        DECLARE $user_id AS String;
+        query_text = """
+        DECLARE $id AS Utf8;
+        DECLARE $user_id AS Utf8;
 
         DELETE FROM user_settings
         WHERE id = $id AND user_id = $user_id;
         """
 
+        # Компилируем запрос
+        prepared_query = session.prepare(query_text)
+
         session.transaction(ydb.SerializableReadWrite()).execute(
-            query,
+            prepared_query,
             {
                 "$id": preset_id,
                 "$user_id": user_id,
