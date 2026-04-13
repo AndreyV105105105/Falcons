@@ -9,7 +9,7 @@ const PresetCard = ({ item, onApply }) => {
           </p>
         </div>
       </div>
-      <button 
+      <button
         onClick={() => onApply(item)}
         className="w-full font-oswald border-2 border-black py-2 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-black hover:text-white transition-all cursor-pointer"
       >
