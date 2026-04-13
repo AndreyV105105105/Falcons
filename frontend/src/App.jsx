@@ -12,10 +12,10 @@ function App() {
 
   const [length, setLength] = useState(12);
   const [settings, setSettings] = useState({
-    lowercase: true,
-    uppercase: false,
-    symbols: false,
-    excludeSimilar: false
+    use_digits: false,
+    use_upper: false,   
+    use_special: false, 
+    exclude_similar: false
   });
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const savedPasswords = [

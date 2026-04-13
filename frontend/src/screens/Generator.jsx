@@ -6,8 +6,8 @@ const Generator = ({
   length, setLength, settings, toggleSetting, 
   isMenuOpen, setIsMenuOpen, setScreen
 }) => {
-  const [password, setPassword] = useState("Kj9!pL2mN");
-  const [difficulty, setDifficulty] = useState("Средний");
+  const [password, setPassword] = useState();
+  const [difficulty, setDifficulty] = useState();
   const [copied, setCopied] = useState(false);
   const handleGenerate = async () => {
     try {
@@ -135,7 +135,7 @@ const Generator = ({
                 onClick={() => toggleSetting(item.id)}
               >
                 <div className={`w-6 h-6 border-2 border-black flex items-center justify-center transition-colors ${
-                  item.id === 'excludeSimilar' ? 'rounded-full' : 'rounded-sm'
+                  item.id === 'exclude_similar' ? 'rounded-full' : 'rounded-sm'
                 } ${settings[item.id] ? 'bg-black' : 'bg-transparent'}`}>
                   {settings[item.id] && (
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4">
