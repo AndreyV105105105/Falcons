@@ -15,6 +15,11 @@ const Generator = ({
   const onCopyClick = () => {
     handleCopy(password, setCopied);
   };
+
+  const handleLogout = () => {
+    localStorage.removeItem('jwt_token');
+    setScreen('auth');
+  }
   
   return (
     <div className="bg-white p-6 rounded-[40px] shadow-2xl w-full max-w-sm flex flex-col items-center border border-neutral-200 relative">
@@ -42,6 +47,9 @@ const Generator = ({
                 </button>
                 <button onClick={() => { setScreen('my_passwords'); setIsMenuOpen(false); }} className="font-oswald font-bold uppercase tracking-widest p-4 text-left hover:bg-neutral-100 text-sm cursor-pointer">
                   Мои пароли
+                </button>
+                <button onClick={() => {handleLogout(); setIsMenuOpen(false); }} className="font-oswald font-bold uppercase tracking-widest p-4 text-left hover:bg-neutral-100 text-sm cursor-pointer">
+                  Выйти
                 </button>
               </div>
             </div>

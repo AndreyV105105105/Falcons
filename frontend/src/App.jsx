@@ -6,7 +6,10 @@ import Passwords from './screens/Passwords';
 import Presets from './screens/Presets';
 
 function App() {
-  const [screen, setScreen] = useState('auth');
+  const [screen, setScreen] = useState(() => {
+    return localStorage.getItem('jwt_token') ? 'generator' : 'auth';
+  });
+
   const [length, setLength] = useState(12);
   const [settings, setSettings] = useState({
     lowercase: true,
@@ -40,6 +43,8 @@ function App() {
   const toggleSetting = (name) => {
     setSettings(prev => ({ ...prev, [name]: !prev[name] }));
   };
+
+  
 
   // Общие стили для инпутов авторизации
   const authInputStyle = "w-full font-bold p-4 border-2 border-black rounded-2xl focus:bg-neutral-50 outline-none font-oswald uppercase tracking-widest placeholder:text-neutral-300";

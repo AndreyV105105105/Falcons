@@ -15,6 +15,7 @@ _pool = None
 YDB_ENDPOINT = os.getenv("YDB_ENDPOINT")
 YDB_DATABASE = os.getenv("YDB_DATABASE")
 
+
 def init_db():
     """
     Инициализируем подключение к YDB.
@@ -67,6 +68,7 @@ def find_user_by_email(email):
 
         if result_sets and result_sets[0].rows:
             row = result_sets[0].rows[0]
+            # YDB сама вернет нормальные строки при использовании Utf8
             return {
                 "id": row.id,
                 "email": row.username,
