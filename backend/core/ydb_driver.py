@@ -1,6 +1,11 @@
 import os
 import ydb
 import uuid
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+import base64
+import hashlib
+import json
+from core.generator import calculate_entropy
 
 # Глобальные объекты
 _driver = None
@@ -34,6 +39,9 @@ def init_db():
 
     return _driver, _pool
 
+# =============================================================================
+# СОХРАНЕНИЕ ПОЛЬЗОВАТЕЛЕЙ
+# =============================================================================
 
 def find_user_by_email(email):
     """
@@ -50,7 +58,6 @@ def find_user_by_email(email):
         FROM users
         WHERE username = $email;
         """
-        # Компилируем запрос перед выполнением
         prepared_query = session.prepare(query_text)
 
         result_sets = session.transaction(ydb.SerializableReadWrite()).execute(
@@ -75,6 +82,44 @@ def find_user_by_email(email):
     return _pool.retry_operation_sync(query_callee)
 
 
+def find_user_by_id(user_id):
+    """
+    Найти пользователя по ID.
+    """
+    if _pool is None:
+        init_db()
+
+    def query_callee(session):
+        query_text = """
+        DECLARE $id AS Utf8;
+
+        SELECT id, username, password_hash, keyword_hash, keyword_salt, createdAt
+        FROM users
+        WHERE id = $id;
+        """
+        prepared_query = session.prepare(query_text)
+
+        result_sets = session.transaction(ydb.SerializableReadWrite()).execute(
+            prepared_query,
+            {"$id": user_id},
+            commit_tx=True,
+        )
+
+        if result_sets and result_sets[0].rows:
+            row = result_sets[0].rows[0]
+            return {
+                "id": row.id,
+                "email": row.username,
+                "password_hash": row.password_hash,
+                "keyword_hash": row.keyword_hash,
+                "keyword_salt": row.keyword_salt,
+                "createdAt": row.createdAt
+            }
+        return None
+
+    return _pool.retry_operation_sync(query_callee)
+
+
 def create_user_in_db(email, password_hash, keyword_hash=None, keyword_salt=None):
     """
     Создать нового пользователя в БД.
@@ -86,17 +131,16 @@ def create_user_in_db(email, password_hash, keyword_hash=None, keyword_salt=None
         user_id = str(uuid.uuid4())
 
         query_text = """
-            DECLARE $id AS Utf8;
-            DECLARE $email AS Utf8;
-            DECLARE $password_hash AS Utf8;
-            DECLARE $keyword_hash AS Utf8;
-            DECLARE $keyword_salt AS Utf8;
+        DECLARE $id AS Utf8;
+        DECLARE $email AS Utf8;
+        DECLARE $password_hash AS Utf8;
+        DECLARE $keyword_hash AS Utf8;
+        DECLARE $keyword_salt AS Utf8;
 
-            INSERT INTO users (id, username, password_hash, keyword_hash, keyword_salt, createdAt)
-            VALUES ($id, $email, $password_hash, $keyword_hash, $keyword_salt, CurrentUtcTimestamp());
+        INSERT INTO users (id, username, password_hash, keyword_hash, keyword_salt, createdAt)
+        VALUES ($id, $email, $password_hash, $keyword_hash, $keyword_salt, CurrentUtcTimestamp());
         """
 
-        # Компилируем запрос
         prepared_query = session.prepare(query_text)
 
         session.transaction(ydb.SerializableReadWrite()).execute(
@@ -114,6 +158,10 @@ def create_user_in_db(email, password_hash, keyword_hash=None, keyword_salt=None
 
     return _pool.retry_operation_sync(query_callee)
 
+
+# =============================================================================
+# СОХРАНЕНИ ПРЕСЕТОВ ПОЛЬЗОВАТЕЛЕЙ
+# =============================================================================
 
 def save_user_preset(user_id, profile_name, settings):
     """
@@ -149,7 +197,6 @@ def save_user_preset(user_id, profile_name, settings):
         );
         """
 
-        # Компилируем запрос
         prepared_query = session.prepare(query_text)
 
         session.transaction(ydb.SerializableReadWrite()).execute(
@@ -188,7 +235,6 @@ def get_user_presets(user_id):
         WHERE user_id = $user_id;
         """
 
-        # Компилируем запрос
         prepared_query = session.prepare(query_text)
 
         result_sets = session.transaction(ydb.SerializableReadWrite()).execute(
@@ -235,7 +281,6 @@ def delete_user_preset(preset_id, user_id):
         WHERE id = $id AND user_id = $user_id;
         """
 
-        # Компилируем запрос
         prepared_query = session.prepare(query_text)
 
         session.transaction(ydb.SerializableReadWrite()).execute(
@@ -244,6 +289,218 @@ def delete_user_preset(preset_id, user_id):
                 "$id": preset_id,
                 "$user_id": user_id,
             },
+            commit_tx=True,
+        )
+        return True
+
+    return _pool.retry_operation_sync(query_callee)
+
+
+# =============================================================================
+# СОХРАНЕНИЕ ПАРОЛЕЙ
+# =============================================================================
+
+def _derive_key_from_keyword(keyword, salt):
+    """Извлечение ключа шифрования из ключевого слова + соли, используя PBKDF2"""
+    return hashlib.pbkdf2_hmac(
+        'sha256',
+        keyword.encode('utf-8'),
+        salt.encode('utf-8'),
+        100000  # iterations
+    )
+
+
+def save_user_password(user_id, title, password, keyword):
+    """
+    Сохраняем зашифрованный пароль в хранилище.
+    """
+    if _pool is None:
+        init_db()
+
+    # Получаем keyword_salt из БД (по ID пользователя)
+    user = find_user_by_id(user_id)
+    if not user:
+        raise ValueError("User not found")
+
+    keyword_salt = user.get('keyword_salt') or str(uuid.uuid4())
+    encryption_key = _derive_key_from_keyword(keyword, keyword_salt)
+
+    # Шифруем пароль (AES-256-GCM)
+    aesgcm = AESGCM(encryption_key)
+    nonce = os.urandom(12)  # 96-bit nonce for GCM
+    encrypted_data = aesgcm.encrypt(nonce, password.encode('utf-8'), None)
+
+    # Оценка надёжности через функцию Андрея
+    entropy_data = calculate_entropy(password)
+    strength_score = int(entropy_data['score'])
+    strength_details = json.dumps({
+        "entropy_score": entropy_data['score'],
+        "entropy_level": entropy_data['level'],
+        "length": len(password)
+    })
+
+    def query_callee(session):
+        password_id = str(uuid.uuid4())
+
+        query_text = """
+        DECLARE $id AS Utf8;
+        DECLARE $user_id AS Utf8;
+        DECLARE $title AS Utf8;
+        DECLARE $encrypted_data AS Utf8;
+        DECLARE $iv AS Utf8;
+        DECLARE $auth_tag AS Utf8;
+        DECLARE $strength_score AS Int32;
+        DECLARE $strength_details AS Utf8;
+
+        INSERT INTO saved_passwords (
+            id, user_id, title, encrypted_data, iv, auth_tag,
+            strength_score, strength_details, createdAt
+        )
+        VALUES (
+            $id, $user_id, $title, $encrypted_data, $iv, $auth_tag,
+            $strength_score, $strength_details, CurrentUtcTimestamp()
+        );
+        """
+
+        prepared_query = session.prepare(query_text)
+
+        # Разделяем ciphertext и auth_tag
+        ciphertext = encrypted_data[:-16]
+        auth_tag_bytes = encrypted_data[-16:]
+
+        session.transaction(ydb.SerializableReadWrite()).execute(
+            prepared_query,
+            {
+                "$id": password_id,
+                "$user_id": user_id,
+                "$title": title,
+                "$encrypted_data": base64.b64encode(ciphertext).decode('utf-8'),
+                "$iv": base64.b64encode(nonce).decode('utf-8'),
+                "$auth_tag": base64.b64encode(auth_tag_bytes).decode('utf-8'),
+                "$strength_score": strength_score,
+                "$strength_details": strength_details,
+            },
+            commit_tx=True,
+        )
+        return password_id
+
+    return _pool.retry_operation_sync(query_callee)
+
+
+def get_user_passwords(user_id):
+    """Получаем список сохранённых паролей пользователя (без расшифровки)"""
+    if _pool is None:
+        init_db()
+
+    def query_callee(session):
+        query_text = """
+        DECLARE $user_id AS Utf8;
+
+        SELECT id, title, strength_score, createdAt
+        FROM saved_passwords
+        WHERE user_id = $user_id;
+        """
+
+        prepared_query = session.prepare(query_text)
+
+        result_sets = session.transaction(ydb.SerializableReadWrite()).execute(
+            prepared_query,
+            {"$user_id": user_id},
+            commit_tx=True,
+        )
+
+        if result_sets and result_sets[0].rows:
+            return [
+                {
+                    "id": row.id,
+                    "title": row.title,
+                    "strength_score": row.strength_score,
+                    "createdAt": row.createdAt
+                }
+                for row in result_sets[0].rows
+            ]
+        return []
+
+    return _pool.retry_operation_sync(query_callee)
+
+
+def decrypt_user_password(password_id, user_id, keyword):
+    """
+    Расшифровываем конкретный пароль (для этого требуется ключевое слово).
+    """
+    if _pool is None:
+        init_db()
+
+    def query_callee_get(session):
+        query_text = """
+        DECLARE $id AS Utf8;
+        DECLARE $user_id AS Utf8;
+
+        SELECT sp.encrypted_data, sp.iv, sp.auth_tag, u.keyword_salt
+        FROM saved_passwords sp
+        JOIN users u ON sp.user_id = u.id
+        WHERE sp.id = $id AND sp.user_id = $user_id;
+        """
+
+        prepared_query = session.prepare(query_text)
+
+        result_sets = session.transaction(ydb.SerializableReadWrite()).execute(
+            prepared_query,
+            {"$id": password_id, "$user_id": user_id},
+            commit_tx=True,
+        )
+
+        if result_sets and result_sets[0].rows:
+            row = result_sets[0].rows[0]
+            return {
+                "encrypted_data": row.encrypted_data,
+                "iv": row.iv,
+                "auth_tag": row.auth_tag,
+                "keyword_salt": row.keyword_salt
+            }
+        return None
+
+    data = _pool.retry_operation_sync(query_callee_get)
+
+    if not data:
+        raise ValueError("Password not found or access denied")
+
+    # Деривируем ключ и расшифровываем
+    encryption_key = _derive_key_from_keyword(keyword, data['keyword_salt'])
+    aesgcm = AESGCM(encryption_key)
+
+    encrypted_data = base64.b64decode(data['encrypted_data'])
+    nonce = base64.b64decode(data['iv'])
+    auth_tag = base64.b64decode(data['auth_tag'])
+
+    try:
+        decrypted = aesgcm.decrypt(nonce, encrypted_data + auth_tag, None)
+        return decrypted.decode('utf-8')
+    except Exception:
+        raise ValueError("Invalid keyword (decryption failed)")
+
+
+def delete_user_password(password_id, user_id):
+    """
+    Удаление сохранённого пароля.
+    """
+    if _pool is None:
+        init_db()
+
+    def query_callee(session):
+        query_text = """
+        DECLARE $id AS Utf8;
+        DECLARE $user_id AS Utf8;
+
+        DELETE FROM saved_passwords
+        WHERE id = $id AND user_id = $user_id;
+        """
+
+        prepared_query = session.prepare(query_text)
+
+        session.transaction(ydb.SerializableReadWrite()).execute(
+            prepared_query,
+            {"$id": password_id, "$user_id": user_id},
             commit_tx=True,
         )
         return True

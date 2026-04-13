@@ -1,3 +1,4 @@
 PyJWT==2.8.0
 werkzeug==3.0.1
 ydb==3.3.0
+cryptography==42.0.0
