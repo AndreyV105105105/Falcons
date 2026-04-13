@@ -47,7 +47,7 @@ function App() {
   
 
   // Общие стили для инпутов авторизации
-  const authInputStyle = "w-full font-bold p-4 border-2 border-black rounded-2xl focus:bg-neutral-50 outline-none font-oswald uppercase tracking-widest placeholder:text-neutral-300";
+  const authInputStyle = "w-full font-bold p-4 border-2 border-black rounded-2xl focus:bg-neutral-50 outline-none font-oswald tracking-widest placeholder:text-neutral-300";
 
   return (
     <div className="min-h-screen bg-neutral-100 flex flex-col items-center justify-center p-4 font-sans text-neutral-900">

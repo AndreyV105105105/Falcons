@@ -20,8 +20,15 @@ const Registration = ({authInputStyle, setScreen}) => {
     };
 
     return (
-        <div className="bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-sm flex flex-col items-center border border-neutral-200">
+        <div className="relative bg-white p-10 rounded-[40px] shadow-2xl w-full max-w-sm flex flex-col items-center border border-neutral-200">
+            <button 
+                onClick={() => setScreen('auth')} 
+                className="absolute top-6 right-6 font-oswald font-bold uppercase text-[10px] tracking-widest border-2 border-black rounded-xl px-3 py-2 hover:bg-black hover:text-white transition-colors cursor-pointer"
+            >
+                Назад
+            </button>
             <h1 className="font-oswald text-[32px] mb-10 uppercase tracking-tighter leading-none text-center">Регистрация</h1>
+            
             <div className="w-full space-y-3">
                 <input type="text" placeholder="ЛОГИН" className={authInputStyle} onChange={(e) => setLogin(e.target.value)} />
                 <div className="relative w-full">
