@@ -94,7 +94,14 @@ const Generator = ({
           </button>
         </div>
 
-        <span className="font-oswald text-xs font-bold uppercase tracking-widest self-start ml-2 mb-4">{difficulty}</span>
+        <span className={`font-oswald text-xs font-bold uppercase tracking-widest self-start ml-2 mb-4 transition-colors ${
+          difficulty === 'Непробиваемый' ? 'text-green-500' : 
+          difficulty === 'Надежный' ? 'text-green-400' : 
+          difficulty === 'Средний' ? 'text-yellow-500' : 
+          difficulty === 'Слабый' ? 'text-red-500' : 'text-neutral-400'
+        }`}>
+          {difficulty}
+        </span>
 
           <div className="w-full mb-6">
             <div className="flex justify-center items-center mb-2 gap-4">

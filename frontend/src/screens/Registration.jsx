@@ -10,8 +10,11 @@ const Registration = ({authInputStyle, setScreen}) => {
     const handleRegister = async () => {
         setLoading(true);
         try {
-            await registerUser(login, password);
-            setScreen('generator'); 
+            const response = await registerUser(login, password);
+            if (response.token) {
+                localStorage.setItem('jwt_token', response.token);
+                    setScreen('generator');
+            } 
         } catch (err) {
             alert(err.message);
         } finally {
