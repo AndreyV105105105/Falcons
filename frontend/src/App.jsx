@@ -24,21 +24,25 @@ function App() {
     { id: 3, service: 'Telegram', pass: 'Tg_Master_99!'},
   ];
   const savedPresets = [
-    { id: 1, name: 'Максимальная защита', length: 20, lowercase: true, uppercase: true, symbols: true, excludeSimilar: true },
-    { id: 2, name: 'Для соцсетей', length: 12, lowercase: true, uppercase: true, symbols: false, excludeSimilar: false },
-    { id: 3, name: 'Простой пин-код', length: 6, lowercase: false, uppercase: false, symbols: false, excludeSimilar: false },
+    { id: 1, name: 'Максимальная защита', length: 20, use_digits: true, use_upper: true, use_special: true, exclude_similar: true },
+    { id: 2, name: 'Для соцсетей', length: 12, use_digits: true, use_upper: true, use_special: false, exclude_similar: false },
+    { id: 3, name: 'Простой пин-код', length: 6, use_digits: false, use_upper: false, use_special: false, exclude_similar: false },
   ];
 
-  const applyPreset = (preset) => {
+  //
+  
+const applyPreset = (preset) => {
     setLength(preset.length);
+    
     setSettings({
-      lowercase: preset.lowercase,
-      uppercase: preset.uppercase,
-      symbols: preset.symbols,
-      excludeSimilar: preset.excludeSimilar
+        use_digits: preset.use_digits,
+        use_upper: preset.use_upper,
+        use_special: preset.use_special,
+        exclude_similar: preset.exclude_similar
     });
+
     setScreen('generator');
-  };
+};
 
   const toggleSetting = (name) => {
     setSettings(prev => ({ ...prev, [name]: !prev[name] }));
