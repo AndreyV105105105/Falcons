@@ -52,3 +52,4 @@ def login_user_logic(email, password, secret_key):
     }, secret_key, algorithm='HS256')
 
     return {"userId": user['id'], "token": token, "status": 200}
+

@@ -87,5 +87,3 @@ def calculate_entropy(password):
         "score": E,
         "level": level
     }
-
-
