@@ -1,8 +1,11 @@
 import json
 import os
 import base64
-from core.auth_service import register_user_logic, login_user_logic
-from core.generator_service import generate_logic
+from backend.core.auth_service import register_user_logic, login_user_logic
+from backend.core.generator_service import generate_logic
+
+from backend.core.presets_service import create_preset, get_presets, delete_preset
+from backend.core.security import verify_token
 
 
 def handler(event, context):
@@ -47,6 +50,22 @@ def handler(event, context):
             result = login_user_logic(clean_email, clean_password, secret_key)
         elif '/generate' in path:
             result = generate_logic(body)
+        elif '/presets' in path:
+            # Охранник
+            user_id, error_response = verify_token(event.get('headers', {}))
+
+            if error_response:
+                return {
+                    'statusCode': error_response['status'],
+                    'headers': {'Content-Type': 'application/json'},
+                    'body': json.dumps({'error': error_response['error']})
+                }
+            if '/presets/save' in path:
+                return create_preset(user_id, body)
+            elif '/presets/get' in path:
+                return get_presets(user_id)
+            elif '/presets/delete' in path:
+                return delete_preset(user_id, body)
         else:
             return {
                 'statusCode': 404,

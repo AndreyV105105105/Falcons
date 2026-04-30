@@ -1,5 +1,4 @@
-
-from core.generator import generate_password, calculate_entropy
+from backend.core.generator import generate_password, calculate_entropy
 
 
 def generate_logic(body):
