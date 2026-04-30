@@ -5,7 +5,7 @@ const PresetCard = ({ item, onApply }) => {
         <div>
           <h3 className="font-oswald font-bold uppercase text-sm tracking-wide">{item.name}</h3>
           <p className="text-[10px] text-neutral-400 font-bold tracking-widest">
-            <span className='uppercase'>Длина:</span> {item.length} • {item.lowercase ? 'abc' : ''} {item.uppercase ? 'ABC' : ''} {item.symbols ? '#$%' : ''}
+            <span className='uppercase'>Длина:</span> {item.length} • {item.use_digits ? '123' : ''} {item.use_upper ? 'ABC' : ''} {item.use_special ? '#$%' : ''}
           </p>
         </div>
       </div>
