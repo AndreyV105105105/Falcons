@@ -39,5 +39,5 @@ export const loginUser = (email, password) => {
 
 export const logoutUser = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('iserId');
+    localStorage.removeItem('userId');
 };

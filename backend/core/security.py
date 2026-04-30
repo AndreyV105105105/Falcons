@@ -8,7 +8,8 @@ if not SECRET_KEY:
 
 
 def verify_token(headers):
-    auth_header = headers.get('Authorization', '')
+    # Пытаемся взять с большой буквы, если нет - берем с маленькой
+    auth_header = headers.get('Authorization') or headers.get('authorization', '')
 
     if not auth_header or not auth_header.startswith('Bearer '):
         return None, {"error": "Отсутствует или неверный формат токена", "status": 401}

@@ -1,7 +1,7 @@
 import json
 import uuid  # Для генерации уникальных ID пресетов
 # Внимание: импортируй свои реальные функции из ydb_driver!
-from backend.core.ydb_driver import save_user_preset, get_user_presets, delete_user_preset
+from core.ydb_driver import save_user_preset, get_user_presets, delete_user_preset
 
 
 def _format_response(status_code: int, response_body: dict) -> dict:

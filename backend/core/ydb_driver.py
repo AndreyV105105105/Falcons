@@ -5,7 +5,7 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import base64
 import hashlib
 import json
-from backend.core.generator import calculate_entropy
+from core.generator import calculate_entropy
 
 # Глобальные объекты
 _driver = None

@@ -1,6 +1,4 @@
 import secrets
-import string
-import math
 
 def generate_password(length, use_upper, use_digits, use_special, exclude_similar):
     password_list = []

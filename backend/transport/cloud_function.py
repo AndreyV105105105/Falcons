@@ -1,11 +1,11 @@
 import json
 import os
 import base64
-from backend.core.auth_service import register_user_logic, login_user_logic
-from backend.core.generator_service import generate_logic
+from core.auth_service import register_user_logic, login_user_logic
+from core.generator_service import generate_logic
 
-from backend.core.presets_service import create_preset, get_presets, delete_preset
-from backend.core.security import verify_token
+from core.presets_service import create_preset, get_presets, delete_preset
+from core.security import verify_token
 
 
 def handler(event, context):
@@ -57,7 +57,10 @@ def handler(event, context):
             if error_response:
                 return {
                     'statusCode': error_response['status'],
-                    'headers': {'Content-Type': 'application/json'},
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
                     'body': json.dumps({'error': error_response['error']})
                 }
             if '/presets/save' in path:
