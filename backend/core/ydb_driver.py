@@ -4,7 +4,6 @@ import uuid
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 import base64
 import hashlib
-import json
 from core.generator import calculate_entropy
 
 # Глобальные объекты
@@ -183,17 +182,16 @@ def save_user_preset(user_id, profile_name, settings):
         DECLARE $use_numbers AS Bool;
         DECLARE $use_symbols AS Bool;
         DECLARE $exclude_ambiguous AS Bool;
-        DECLARE $custom_symbols AS Utf8;
 
         INSERT INTO user_settings (
             id, user_id, profile_name, password_length,
             use_uppercase, use_lowercase, use_numbers, use_symbols,
-            exclude_ambiguous, custom_symbols, updatedAt
+            exclude_ambiguous, updatedAt
         )
         VALUES (
             $id, $user_id, $profile_name, $password_length,
             $use_uppercase, $use_lowercase, $use_numbers, $use_symbols,
-            $exclude_ambiguous, $custom_symbols, CurrentUtcTimestamp()
+            $exclude_ambiguous, CurrentUtcTimestamp()
         );
         """
 
@@ -211,7 +209,6 @@ def save_user_preset(user_id, profile_name, settings):
                 "$use_numbers": settings.get("use_numbers", True),
                 "$use_symbols": settings.get("use_symbols", True),
                 "$exclude_ambiguous": settings.get("exclude_ambiguous", False),
-                "$custom_symbols": settings.get("custom_symbols", ""),
             },
             commit_tx=True,
         )
@@ -231,7 +228,10 @@ def get_user_presets(user_id):
         query_text = """
         DECLARE $user_id AS Utf8;
 
-        SELECT * FROM user_settings
+        SELECT id, user_id, profile_name, password_length,
+               use_uppercase, use_lowercase, use_numbers, use_symbols,
+               exclude_ambiguous, updatedAt
+        FROM user_settings
         WHERE user_id = $user_id;
         """
 
@@ -255,7 +255,6 @@ def get_user_presets(user_id):
                     "use_numbers": row.use_numbers,
                     "use_symbols": row.use_symbols,
                     "exclude_ambiguous": row.exclude_ambiguous,
-                    "custom_symbols": row.custom_symbols,
                     "updatedAt": row.updatedAt
                 }
                 for row in result_sets[0].rows
@@ -333,11 +332,6 @@ def save_user_password(user_id, title, password, keyword):
     # Оценка надёжности через функцию Андрея
     entropy_data = calculate_entropy(password)
     strength_score = int(entropy_data['score'])
-    strength_details = json.dumps({
-        "entropy_score": entropy_data['score'],
-        "entropy_level": entropy_data['level'],
-        "length": len(password)
-    })
 
     def query_callee(session):
         password_id = str(uuid.uuid4())
@@ -350,15 +344,15 @@ def save_user_password(user_id, title, password, keyword):
         DECLARE $iv AS Utf8;
         DECLARE $auth_tag AS Utf8;
         DECLARE $strength_score AS Int32;
-        DECLARE $strength_details AS Utf8;
+
 
         INSERT INTO saved_passwords (
             id, user_id, title, encrypted_data, iv, auth_tag,
-            strength_score, strength_details, createdAt
+            strength_score, createdAt
         )
         VALUES (
             $id, $user_id, $title, $encrypted_data, $iv, $auth_tag,
-            $strength_score, $strength_details, CurrentUtcTimestamp()
+            $strength_score, CurrentUtcTimestamp()
         );
         """
 
@@ -378,7 +372,6 @@ def save_user_password(user_id, title, password, keyword):
                 "$iv": base64.b64encode(nonce).decode('utf-8'),
                 "$auth_tag": base64.b64encode(auth_tag_bytes).decode('utf-8'),
                 "$strength_score": strength_score,
-                "$strength_details": strength_details,
             },
             commit_tx=True,
         )
