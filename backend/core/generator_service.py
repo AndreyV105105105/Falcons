@@ -1,4 +1,3 @@
-
 from core.generator import generate_password, calculate_entropy
 
 
@@ -27,3 +26,4 @@ def generate_logic(body):
     entropy_data = calculate_entropy(new_password)
 
     return {'password': new_password, 'entropy': entropy_data, 'status': 200}
+

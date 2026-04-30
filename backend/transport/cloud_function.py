@@ -1,7 +1,12 @@
 import json
 import os
+import base64
 from core.auth_service import register_user_logic, login_user_logic
 from core.generator_service import generate_logic
+
+from core.presets_service import create_preset, get_presets, delete_preset
+from core.security import verify_token
+
 
 def handler(event, context):
     """Единая точка входа для авторизации в Yandex Cloud"""
@@ -9,7 +14,6 @@ def handler(event, context):
         # Ловим метод запроса (POST, GET, OPTIONS)
         http_method = event.get('httpMethod', '')
 
-        # ОБРАБОТКА CORS  (Preflight-запрос от браузера)
         if http_method == 'OPTIONS':
             return {
                 'statusCode': 200,
@@ -22,16 +26,49 @@ def handler(event, context):
             }
 
         path = event.get('path', '')
-        body = json.loads(event.get('body', '{}'))
+
+        # Расшифровка Base64
+        raw_body = event.get('body', '{}')
+        if event.get('isBase64Encoded'):
+            raw_body = base64.b64decode(raw_body).decode('utf-8')
+
+        body = json.loads(raw_body)
         secret_key = os.getenv('JWT_SECRET', 'super-secret-key')
 
-        # МАРШРУТИЗАЦИЯ (Регистрация и Логин)
+        # Принудительная очистка текста
+        # Если пришел мусор или None, превращаем в пустую строку
+        email_raw = body.get('email')
+        password_raw = body.get('password')
+
+        clean_email = str(email_raw).strip() if email_raw else ""
+        clean_password = str(password_raw).strip() if password_raw else ""
+
+        # МАРШРУТИЗАЦИЯ
         if '/register' in path:
-            result = register_user_logic(body.get('email'), body.get('password'), secret_key)
+            result = register_user_logic(clean_email, clean_password, secret_key)
         elif '/login' in path:
-            result = login_user_logic(body.get('email'), body.get('password'), secret_key)
+            result = login_user_logic(clean_email, clean_password, secret_key)
         elif '/generate' in path:
             result = generate_logic(body)
+        elif '/presets' in path:
+            # Охранник
+            user_id, error_response = verify_token(event.get('headers', {}))
+
+            if error_response:
+                return {
+                    'statusCode': error_response['status'],
+                    'headers': {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    },
+                    'body': json.dumps({'error': error_response['error']})
+                }
+            if '/presets/save' in path:
+                return create_preset(user_id, body)
+            elif '/presets/get' in path:
+                return get_presets(user_id)
+            elif '/presets/delete' in path:
+                return delete_preset(user_id, body)
         else:
             return {
                 'statusCode': 404,
@@ -46,11 +83,12 @@ def handler(event, context):
             'statusCode': status,
             'headers': {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'  # Пропуск для браузера Егора
+                'Access-Control-Allow-Origin': '*'
             },
             'body': json.dumps(result)
         }
     except Exception as e:
+        print(f"CRITICAL ERROR: {str(e)}")
         return {
             'statusCode': 500,
             'headers': {'Access-Control-Allow-Origin': '*'},

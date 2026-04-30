@@ -57,3 +57,25 @@ paths:
           Access-Control-Allow-Origin: "*"
           Access-Control-Allow-Methods: "POST, OPTIONS"
           Access-Control-Allow-Headers: "Content-Type"
+
+  /generate:
+    post:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: d4e9nfcg5ki4bjnjolji
+        service_account_id: ajemm2m5ho2c0e2rtqli
+        http_method: POST
+      operationId: generatePassword
+      responses:
+        '200':
+          description: Password generated successfully
+    options:
+      x-yc-apigateway-integration:
+        type: dummy
+        content:
+          '*': ""
+        http_code: 200
+        http_headers:
+          Access-Control-Allow-Origin: "*"
+          Access-Control-Allow-Methods: "POST, OPTIONS"
+          Access-Control-Allow-Headers: "Content-Type"

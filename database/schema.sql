@@ -23,7 +23,6 @@ CREATE TABLE `user_settings` (
     `use_numbers` Bool,
     `use_symbols` Bool,
     `exclude_ambiguous` Bool,
-    `custom_symbols` String,
     `updatedAt` Timestamp,
     PRIMARY KEY (`id`)
 );
@@ -38,7 +37,6 @@ CREATE TABLE `saved_passwords` (
     `iv` String,
     `auth_tag` String,
     `strength_score` Int32,
-    `strength_details` String,
     `createdAt` Timestamp,
     PRIMARY KEY (`id`)
 );
