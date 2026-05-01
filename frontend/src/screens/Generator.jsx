@@ -1,5 +1,5 @@
 import { handleCopy } from "../utils/passwordUtils";
-import { getPassword } from "../api/api";
+import { getPassword, savePreset } from "../api/api";
 import { useState } from "react";
 
 const Generator = ({ 
@@ -9,6 +9,8 @@ const Generator = ({
   const [password, setPassword] = useState();
   const [difficulty, setDifficulty] = useState();
   const [copied, setCopied] = useState(false);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [presetName, setPresetName] = useState('');
   const handleGenerate = async () => {
     try {
       const data = await getPassword({
@@ -25,8 +27,27 @@ const Generator = ({
       console.error("Cloud generation failed:", err);
     }
   };
+  
   const onCopyClick = () => {
     handleCopy(password, setCopied);
+  };
+
+  const handleSavePreset = async () => {
+    try {
+      await savePreset({
+        name: presetName,
+        settings: {
+          length: length,
+          use_upper: settings.use_upper,
+          use_digits: settings.use_digits,
+          use_special: settings.use_special,
+          exclude_similar: settings.exclude_similar
+        }
+      });
+      setIsSaveModalOpen(false);
+    } catch (error) {
+      console.error("Failed to save preset:", error);
+    }
   };
 
   const handleLogout = () => {
@@ -157,9 +178,41 @@ const Generator = ({
             ))}
           </div>
 
-          <button className="font-oswald text-xs font-bold uppercase tracking-widest mb-6 text-[16px] cursor-pointer">Сохранить настройку</button>
+          <button onClick={() => setIsSaveModalOpen(true)} className="font-oswald text-xs font-bold uppercase tracking-widest mb-6 text-[16px] cursor-pointer">Сохранить настройку</button>
           
           <button onClick={handleGenerate} className="font-oswald w-full bg-black text-white py-4 rounded-[2rem] text-[16px] font-bold uppercase tracking-widest shadow-xl active:scale-95 transition-all cursor-pointer">Сгенерировать</button>
+          {isSaveModalOpen && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 rounded-[40px] animate-in fade-in duration-200">
+            <div className="bg-white p-6 rounded-3xl w-[90%] shadow-2xl border-2 border-black">
+              <h2 className="font-oswald font-bold uppercase mb-4 text-center">Назовите пресет</h2>
+              <input 
+                autoFocus
+                type="text" 
+                value={presetName}
+                onChange={(e) => setPresetName(e.target.value)}
+                className="w-full p-3 border-2 border-black rounded-xl mb-4 font-oswald uppercase text-sm outline-none"
+              />
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setIsSaveModalOpen(false)}
+                  className="flex-1 border-2 border-black py-2 rounded-xl font-oswald font-bold uppercase text-xs cursor-pointer hover:bg-neutral-100"
+                >
+                  Отмена
+                </button>
+                <button 
+                  onClick={() => {
+                    handleSavePreset();
+                    setIsSaveModalOpen(false);
+                    setPresetName('');
+                  }}
+                  className="flex-1 bg-black text-white py-2 rounded-xl font-oswald font-bold uppercase text-xs cursor-pointer hover:bg-neutral-800"
+                >
+                  Сохранить
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         </div>
   );
 };

@@ -1,4 +1,4 @@
-const API_GATEWAY_URL = 'https://d5d5sl318gmabr3ciul9.z7jmlavt.apigw.yandexcloud.net';
+const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL;
 
 const authRequest = async (endpoint, email, password) => {
     try {
@@ -41,11 +41,24 @@ export const getPassword = async (settings) => {
 };
 
 export const registerUser = (email, password) => {
-    return authRequest('/auth/register', email, password);
+    return authRequest('/register', email, password);
 };
 
 export const loginUser = (email, password) => {
-    return authRequest('/auth/login', email, password);
+    return authRequest('/login', email, password);
+};
+
+export const savePreset = async (settings) => {
+    const response = await fetch(`${API_GATEWAY_URL}/preset/save`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+    },
+    body: JSON.stringify(settings)
+  });
+  
+  if (!response.ok) throw new Error('Failed to save preset');
+  return await response.json();
 };
 
 export const logoutUser = () => {
