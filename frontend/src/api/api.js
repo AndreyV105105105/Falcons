@@ -41,15 +41,15 @@ export const getPassword = async (settings) => {
 };
 
 export const registerUser = (email, password) => {
-    return authRequest('/register', email, password);
+    return authRequest('/auth/register', email, password);
 };
 
 export const loginUser = (email, password) => {
-    return authRequest('/login', email, password);
+    return authRequest('/auth/login', email, password);
 };
 
 export const savePreset = async (settings) => {
-    const response = await fetch(`${API_GATEWAY_URL}/preset/save`, {
+    const response = await fetch(`${API_GATEWAY_URL}/presets/save`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 
         'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -59,6 +59,20 @@ export const savePreset = async (settings) => {
   
   if (!response.ok) throw new Error('Failed to save preset');
   return await response.json();
+};
+
+export const getPresets = async () => {
+    const response = await fetch(`${API_GATEWAY_URL}/presets/get`, {
+        method: 'GET',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+    });
+
+    if (!response.ok) throw new Error('Failed to fetch presets');
+    const data = await response.json();
+    return data.presets;
 };
 
 export const logoutUser = () => {

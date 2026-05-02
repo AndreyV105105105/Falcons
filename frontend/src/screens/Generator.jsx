@@ -35,23 +35,22 @@ const Generator = ({
   const handleSavePreset = async () => {
     try {
       await savePreset({
-        name: presetName,
-        settings: {
-          length: length,
-          use_upper: settings.use_upper,
-          use_digits: settings.use_digits,
-          use_special: settings.use_special,
-          exclude_similar: settings.exclude_similar
-        }
+        preset_name: presetName, 
+        length: length,
+        use_uppercase: settings.use_upper,
+        use_numbers: settings.use_digits,
+        use_special: settings.use_special,
+        use_lowercase: true,
       });
       setIsSaveModalOpen(false);
+      setPresetName('');
     } catch (error) {
       console.error("Failed to save preset:", error);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('jwt_token');
+    localStorage.removeItem('token');
     setScreen('auth');
   }
   
