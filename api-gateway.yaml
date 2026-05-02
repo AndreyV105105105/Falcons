@@ -68,3 +68,69 @@ paths:
           Access-Control-Allow-Origin: "*"
           Access-Control-Allow-Methods: "POST, OPTIONS"
           Access-Control-Allow-Headers: "Content-Type"
+
+  /presets/get:
+    get:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: d4e9nfcg5ki4bjnjolji
+        service_account_id: ajemm2m5ho2c0e2rtqli
+        http_method: POST
+      operationId: getUserPresets
+      responses:
+        '200':
+          description: List of user presets
+    options:
+      x-yc-apigateway-integration:
+        type: dummy
+        content:
+          '*': ""
+        http_code: 200
+        http_headers:
+          Access-Control-Allow-Origin: "*"
+          Access-Control-Allow-Methods: "GET, POST, OPTIONS"
+          Access-Control-Allow-Headers: "Content-Type, Authorization"
+
+  /presets/save:
+    post:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: d4e9nfcg5ki4bjnjolji
+        service_account_id: ajemm2m5ho2c0e2rtqli
+        http_method: POST
+      operationId: savePreset
+      responses:
+        '200':
+          description: Preset saved successfully
+    options:
+      x-yc-apigateway-integration:
+        type: dummy
+        content:
+          '*': ""
+        http_code: 200
+        http_headers:
+          Access-Control-Allow-Origin: "*"
+          Access-Control-Allow-Methods: "POST, OPTIONS"
+          Access-Control-Allow-Headers: "Content-Type, Authorization"
+
+  /presets/delete:
+    post:
+      x-yc-apigateway-integration:
+        type: cloud_functions
+        function_id: d4e9nfcg5ki4bjnjolji
+        service_account_id: ajemm2m5ho2c0e2rtqli
+        http_method: POST
+      operationId: deletePreset
+      responses:
+        '200':
+          description: Preset deleted successfully
+    options:
+      x-yc-apigateway-integration:
+        type: dummy
+        content:
+          '*': ""
+        http_code: 200
+        http_headers:
+          Access-Control-Allow-Origin: "*"
+          Access-Control-Allow-Methods: "POST, OPTIONS"
+          Access-Control-Allow-Headers: "Content-Type, Authorization"

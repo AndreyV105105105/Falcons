@@ -67,13 +67,17 @@ def find_user_by_email(email):
 
         if result_sets and result_sets[0].rows:
             row = result_sets[0].rows[0]
-            # YDB сама вернет нормальные строки при использовании Utf8
+
+            # Защита от возврата байтов (String) вместо строк (Utf8) из YDB
+            def safe_decode(val):
+                return val.decode('utf-8') if isinstance(val, bytes) else val
+
             return {
-                "id": row.id,
-                "email": row.username,
-                "password_hash": row.password_hash,
-                "keyword_hash": row.keyword_hash,
-                "keyword_salt": row.keyword_salt,
+                "id": safe_decode(row.id),
+                "email": safe_decode(row.username),
+                "password_hash": safe_decode(row.password_hash),
+                "keyword_hash": safe_decode(row.keyword_hash),
+                "keyword_salt": safe_decode(row.keyword_salt),
                 "createdAt": row.createdAt
             }
         return None
@@ -106,12 +110,16 @@ def find_user_by_id(user_id):
 
         if result_sets and result_sets[0].rows:
             row = result_sets[0].rows[0]
+
+            def safe_decode(val):
+                return val.decode('utf-8') if isinstance(val, bytes) else val
+
             return {
-                "id": row.id,
-                "email": row.username,
-                "password_hash": row.password_hash,
-                "keyword_hash": row.keyword_hash,
-                "keyword_salt": row.keyword_salt,
+                "id": safe_decode(row.id),
+                "email": safe_decode(row.username),
+                "password_hash": safe_decode(row.password_hash),
+                "keyword_hash": safe_decode(row.keyword_hash),
+                "keyword_salt": safe_decode(row.keyword_salt),
                 "createdAt": row.createdAt
             }
         return None
