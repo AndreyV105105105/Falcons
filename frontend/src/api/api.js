@@ -61,6 +61,19 @@ export const savePreset = async (settings) => {
   return await response.json();
 };
 
+export const deletePreset = async (presetId) => {
+    const response = await fetch(`${API_GATEWAY_URL}/presets/delete`, {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ preset_id: presetId })
+    });
+
+    if (!response.ok) throw new Error('Failed to delete preset');
+};
+
 export const getPresets = async () => {
     const response = await fetch(`${API_GATEWAY_URL}/presets/get`, {
         method: 'GET',
