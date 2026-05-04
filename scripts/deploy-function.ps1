@@ -22,9 +22,21 @@ Push-Location $BACKEND_PATH
 $zipFile = Join-Path $Script:RepoRoot "auth-handler.zip"
 if (Test-Path $zipFile) { Remove-Item $zipFile }
 
-# Упаковываем всё, что нужно для функции
-Compress-Archive -Path "transport", "core", "requirements.txt" -DestinationPath $zipFile -Force
+# Создаем временную папку для правильной сборки
+$TEMP_DIR = "temp_build"
+New-Item -ItemType Directory -Force -Path $TEMP_DIR | Out-Null
+
+# Копируем туда только нужные папки и файлы (структура сохранится)
+Copy-Item -Path "transport" -Destination $TEMP_DIR -Recurse
+Copy-Item -Path "core" -Destination $TEMP_DIR -Recurse
+Copy-Item -Path "requirements.txt" -Destination $TEMP_DIR
+
+# Упаковываем Содержимое временной папки
+Compress-Archive -Path "$TEMP_DIR\*" -DestinationPath $zipFile -Force
 Write-Success "ZIP archive created ($zipFile)"
+
+# Убираем за собой мусор
+Remove-Item -Path $TEMP_DIR -Recurse -Force
 Pop-Location
 
 # Создаём функцию (если не существует)

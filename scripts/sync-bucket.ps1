@@ -20,10 +20,17 @@ if (-not (Test-Path $DIST_PATH)) {
     exit 1
 }
 
-# Синхронизируем файлы с бакетом через yc storage
-Get-ChildItem -Path $DIST_PATH -File | ForEach-Object {
-    Write-Host "Uploading: $($_.Name)"
-    yc storage object upload --bucket-name $BUCKET_NAME --source $_.FullName --name $_.Name 2>$null
+# Рекурсивно собираем ВСЕ файлы, включая вложенные папки
+$files = Get-ChildItem -Path $DIST_PATH -File -Recurse
+
+foreach ($file in $files) {
+    # Вычисляем правильный относительный путь (например: assets/index.js)
+    # Заменяем обратные слеши Windows (\) на прямые (/), как требует Object Storage
+    $relativePath = $file.FullName.Substring($DIST_PATH.Length + 1).Replace("\", "/")
+
+    Write-Host "Uploading: $relativePath"
+
+    yc storage object upload --bucket-name $BUCKET_NAME --source $file.FullName --name $relativePath
 }
 
-Write-Success "Бакет синхронизирован: https://$BUCKET_NAME.website.yandexcloud.net"node --version
+Write-Success "Бакет синхронизирован: https://$BUCKET_NAME.website.yandexcloud.net"
