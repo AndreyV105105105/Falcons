@@ -7,7 +7,7 @@ import Presets from './screens/Presets';
 
 function App() {
   const [screen, setScreen] = useState(() => {
-    return localStorage.getItem('jwt_token') ? 'generator' : 'auth';
+    return localStorage.getItem('token') ? 'generator' : 'auth';
   });
 
   const [length, setLength] = useState(12);
@@ -32,13 +32,13 @@ function App() {
   //
   
 const applyPreset = (preset) => {
-    setLength(preset.length);
+    setLength(preset.password_length);
     
     setSettings({
-        use_digits: preset.use_digits,
-        use_upper: preset.use_upper,
-        use_special: preset.use_special,
-        exclude_similar: preset.exclude_similar
+        use_upper: preset.use_uppercase,
+        use_digits: preset.use_numbers, 
+        use_special: preset.use_symbols,
+        exclude_similar: preset.exclude_ambiguous || false
     });
 
     setScreen('generator');

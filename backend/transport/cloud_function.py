@@ -28,8 +28,11 @@ def handler(event, context):
         path = event.get('path', '')
 
         # Расшифровка Base64
-        raw_body = event.get('body', '{}')
-        if event.get('isBase64Encoded'):
+        raw_body = event.get('body')
+        
+        if not raw_body: 
+            raw_body = '{}'
+        elif event.get('isBase64Encoded'):
             raw_body = base64.b64decode(raw_body).decode('utf-8')
 
         body = json.loads(raw_body)
