@@ -38,6 +38,12 @@ def init_db():
 
     return _driver, _pool
 
+def safe_decode(val):
+    """Преобразует bytes в str, если это необходимо"""
+    if isinstance(val, bytes):
+        return val.decode('utf-8')
+    return val
+
 # =============================================================================
 # СОХРАНЕНИЕ ПОЛЬЗОВАТЕЛЕЙ
 # =============================================================================
@@ -211,11 +217,11 @@ def save_user_preset(user_id, profile_name, settings):
                 "$id": preset_id,
                 "$user_id": user_id,
                 "$profile_name": profile_name,
-                "$password_length": settings.get("password_length", 16),
+                "$password_length": settings.get("password_length") or settings.get("length") or 16,
                 "$use_uppercase": settings.get("use_uppercase", True),
                 "$use_lowercase": settings.get("use_lowercase", True),
                 "$use_numbers": settings.get("use_numbers", True),
-                "$use_symbols": settings.get("use_symbols", True),
+                "$use_symbols": settings.get("use_symbols") if "use_symbols" in settings else settings.get("use_special", True),
                 "$exclude_ambiguous": settings.get("exclude_ambiguous", False),
             },
             commit_tx=True,
@@ -254,21 +260,20 @@ def get_user_presets(user_id):
         if result_sets and result_sets[0].rows:
             return [
                 {
-                    "id": row.id,
-                    "user_id": row.user_id,
-                    "profile_name": row.profile_name,
+                    "id": safe_decode(row.id),
+                    "user_id": safe_decode(row.user_id),
+                    "profile_name": safe_decode(row.profile_name),
                     "password_length": row.password_length,
                     "use_uppercase": row.use_uppercase,
                     "use_lowercase": row.use_lowercase,
                     "use_numbers": row.use_numbers,
                     "use_symbols": row.use_symbols,
                     "exclude_ambiguous": row.exclude_ambiguous,
-                    "updatedAt": row.updatedAt
+                    "updatedAt": str(row.updatedAt) if row.updatedAt else None
                 }
                 for row in result_sets[0].rows
             ]
         return []
-
     return _pool.retry_operation_sync(query_callee)
 
 
@@ -413,13 +418,14 @@ def get_user_passwords(user_id):
         if result_sets and result_sets[0].rows:
             return [
                 {
-                    "id": row.id,
-                    "title": row.title,
+                    "id": safe_decode(row.id),
+                    "title": safe_decode(row.title),
                     "strength_score": row.strength_score,
-                    "createdAt": row.createdAt
+                    "createdAt": str(row.createdAt) if row.createdAt else None
                 }
                 for row in result_sets[0].rows
             ]
+
         return []
 
     return _pool.retry_operation_sync(query_callee)
