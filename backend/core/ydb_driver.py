@@ -221,7 +221,7 @@ def save_user_preset(user_id, profile_name, settings):
                 "$use_uppercase": settings.get("use_uppercase", True),
                 "$use_lowercase": settings.get("use_lowercase", True),
                 "$use_numbers": settings.get("use_numbers", True),
-                "$use_symbols": settings.get("use_symbols") if "use_symbols" in settings else settings.get("use_special", True),
+                "$use_symbols": settings.get("use_symbols") or settings.get("use_special", True),
                 "$exclude_ambiguous": settings.get("exclude_ambiguous", False),
             },
             commit_tx=True,
