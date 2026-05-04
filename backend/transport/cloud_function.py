@@ -26,16 +26,22 @@ def handler(event, context):
             }
 
         path = event.get('path', '')
-
-        # Расшифровка Base64
         raw_body = event.get('body')
         
-        if not raw_body: 
-            raw_body = '{}'
-        elif event.get('isBase64Encoded'):
-            raw_body = base64.b64decode(raw_body).decode('utf-8')
+        if not raw_body:
+            body = {}
+        else:
+            if event.get('isBase64Encoded'):
+                try:
+                    raw_body = base64.b64decode(raw_body).decode('utf-8')
+                except Exception:
+                    raw_body = "{}"
 
-        body = json.loads(raw_body)
+            try:
+                body = json.loads(raw_body) if raw_body.strip() else {}
+            except (json.JSONDecodeError, AttributeError):
+                body = {}
+
         secret_key = os.getenv('JWT_SECRET', 'super-secret-key')
 
         # Принудительная очистка текста
