@@ -32,8 +32,11 @@ def init_db():
         database=YDB_DATABASE,
         credentials=credentials,
     )
-    _driver = ydb.Driver(driver_config)
-    _driver.wait(timeout=15)
+    try:
+        _driver = ydb.Driver(driver_config)
+        _driver.wait(timeout=15)
+    except TimeoutError:
+        raise RuntimeError("Не удалось подключиться к YDB (Timeout)")
     _pool = ydb.SessionPool(_driver)
 
     return _driver, _pool
