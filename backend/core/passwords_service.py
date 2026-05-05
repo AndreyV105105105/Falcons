@@ -1,8 +1,8 @@
 import json
+import traceback
 from core.ydb_driver import save_user_password, get_user_passwords, decrypt_user_password, delete_user_password
 from core.decorators import require_auth
 from core.logger import logger
-
 
 
 @require_auth
@@ -27,9 +27,9 @@ def save_password_handler(event, user_id, body):
     except Exception as e:
         return {'statusCode': 500, 'headers': headers, 'body': json.dumps({"error": str(e)})}
 
+
 @require_auth
 def get_passwords_handler(event, user_id, body):
-
     # Дефолтные заголовки для всех ответов
     headers = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}
 
@@ -37,7 +37,7 @@ def get_passwords_handler(event, user_id, body):
         # Получаем сырой список
         raw_passwords = get_user_passwords(user_id)
 
-        #Очищаем данные, ТО ЕСТЬ ДЕЛАЕМ ОЧЕНЬ КРУТОЙ ПЕРЕВОД ИЗ БАЙТ В ЛЮДСКИЕ СТРОКИ
+        # Очищаем данные, ТО ЕСТЬ ДЕЛАЕМ ОЧЕНЬ КРУТОЙ ПЕРЕВОД ИЗ БАЙТ В ЛЮДСКИЕ СТРОКИ
 
         sd = lambda x: x.decode('utf-8') if isinstance(x, bytes) else x
 
@@ -61,6 +61,7 @@ def get_passwords_handler(event, user_id, body):
     except Exception as e:
         return {'statusCode': 500, 'headers': headers, 'body': json.dumps({"error": str(e)})}
 
+
 @require_auth
 def decrypt_password_handler(event, user_id, body):
     password_id = body.get('password_id')
@@ -81,18 +82,27 @@ def decrypt_password_handler(event, user_id, body):
 
         sd = lambda x: x.decode('utf-8') if isinstance(x, bytes) else x
         decrypted_text = sd(decrypted_text)
+
         return {
             'statusCode': 200,
             'headers': headers,
             'body': json.dumps({"decrypted_password": decrypted_text})
         }
-    except Exception as e:
-    # Если мастер-ключ не подошел, упадет сюда
+    except ValueError as ve:
+        # Ловим конкретно НАШИ ошибки (старый пароль, неверный ключ)
         return {
             'statusCode': 403,
             'headers': headers,
-            'body': json.dumps({"error": "Неверный мастер-ключ или ошибка доступа"})
+            'body': json.dumps({"error": str(ve)})
         }
+    except Exception as e:
+        logger.error(f"CRITICAL ERROR:\n{traceback.format_exc()}")  # Пишем дебаг только в наши логи
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({"error": "Внутренняя ошибка сервера"})  # Юзеру отдаем стандартную фразу
+        }
+
 
 @require_auth
 def delete_password_handler(event, user_id, body):
