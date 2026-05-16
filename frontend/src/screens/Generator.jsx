@@ -1,5 +1,5 @@
 import { handleCopy } from "../utils/passwordUtils";
-import { getPassword, savePreset } from "../api/api";
+import { getPassword, savePreset, savePassword } from "../api/api"; 
 import { useState } from "react";
 
 const Generator = ({ 
@@ -11,6 +11,8 @@ const Generator = ({
   const [copied, setCopied] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [presetName, setPresetName] = useState('');
+  const [isSaving, setIsSaving] = useState(false); 
+
   const handleGenerate = async () => {
     try {
       const data = await getPassword({
@@ -32,6 +34,36 @@ const Generator = ({
     handleCopy(password, setCopied);
   };
 
+  const handleSavePassword = async () => {
+    if (!password) return;
+
+    const title = prompt("Введите название для пароля:");
+    if (!title) return;
+
+    let savedMasterKey = localStorage.getItem('masterKey');
+
+    if (!savedMasterKey) {
+        savedMasterKey = prompt("Кодовое слово не найдено. Введите его для шифрования:");
+        if (!savedMasterKey) return; 
+        localStorage.setItem('masterKey', savedMasterKey);
+    }
+
+    setIsSaving(true);
+    try {
+        await savePassword({
+            title: title,
+            password: password,
+            keyword: savedMasterKey 
+        });
+        alert("Пароль успешно зашифрован и сохранен!");
+    } catch (error) {
+        alert("Ошибка: " + error.message);
+    } finally {
+        setIsSaving(false);
+    }
+};
+
+
   const handleSavePreset = async () => {
     try {
       await savePreset({
@@ -51,6 +83,7 @@ const Generator = ({
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('masterKey');
     setScreen('auth');
   }
   
@@ -58,40 +91,56 @@ const Generator = ({
     <div className="bg-white p-6 rounded-[40px] shadow-2xl w-full max-w-sm flex flex-col items-center border border-neutral-200 relative">
 
           <div className="w-full flex justify-between items-center mb-8 px-2 relative">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            </svg>
 
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          </svg>
+            <button 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="flex flex-col gap-1.5 cursor-pointer z-20"
+            >
+              <div className={`w-8 h-0.5 bg-black transition-all ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
+              <div className={`w-8 h-0.5 bg-black transition-all ${isMenuOpen ? 'opacity-0' : ''}`}></div>
+              <div className={`w-8 h-0.5 bg-black transition-all ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
+            </button>
 
-          <button 
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex flex-col gap-1.5 cursor-pointer z-20"
-          >
-            <div className={`w-8 h-0.5 bg-black transition-all ${isMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></div>
-            <div className={`w-8 h-0.5 bg-black transition-all ${isMenuOpen ? 'opacity-0' : ''}`}></div>
-            <div className={`w-8 h-0.5 bg-black transition-all ${isMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></div>
-          </button>
-
-          {isMenuOpen && (
-            <div className="absolute top-10 right-0 w-48 bg-white border-2 border-black rounded-2xl shadow-xl z-10 overflow-hidden animate-in fade-in zoom-in duration-200">
-              <div className="flex flex-col">
-                <button onClick={() => { setScreen('my_presets'); setIsMenuOpen(false); }} className="font-oswald font-bold uppercase tracking-widest p-4 text-left hover:bg-neutral-100 border-b border-neutral-100 text-sm cursor-pointer">
-                  Мои настройки
-                </button>
-                <button onClick={() => { setScreen('my_passwords'); setIsMenuOpen(false); }} className="font-oswald font-bold uppercase tracking-widest p-4 text-left hover:bg-neutral-100 text-sm cursor-pointer">
-                  Мои пароли
-                </button>
-                <button onClick={() => {handleLogout(); setIsMenuOpen(false); }} className="font-oswald font-bold uppercase tracking-widest p-4 text-left hover:bg-neutral-100 text-sm cursor-pointer">
-                  Выйти
-                </button>
+            {isMenuOpen && (
+              <div className="absolute top-10 right-0 w-48 bg-white border-2 border-black rounded-2xl shadow-xl z-10 overflow-hidden animate-in fade-in zoom-in duration-200">
+                <div className="flex flex-col">
+                  <button onClick={() => { setScreen('my_presets'); setIsMenuOpen(false); }} className="font-oswald font-bold uppercase tracking-widest p-4 text-left hover:bg-neutral-100 border-b border-neutral-100 text-sm cursor-pointer">
+                    Мои настройки
+                  </button>
+                  <button onClick={() => { setScreen('my_passwords'); setIsMenuOpen(false); }} className="font-oswald font-bold uppercase tracking-widest p-4 text-left hover:bg-neutral-100 text-sm cursor-pointer">
+                    Мои пароли
+                  </button>
+                  <button onClick={() => {handleLogout(); setIsMenuOpen(false); }} className="font-oswald font-bold uppercase tracking-widest p-4 text-left hover:bg-neutral-100 text-sm cursor-pointer">
+                    Выйти
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
 
         <h1 className="font-oswald text-[32px] mb-6 uppercase tracking-tight text-center">Генератор пароля</h1>
 
         <div className="w-full flex items-center gap-2 mb-1">
+          {/* Новая кнопка сохранения пароля слева */}
+          <button 
+            onClick={handleSavePassword} 
+            disabled={!password || isSaving}
+            className="p-3 border-2 border-black rounded-2xl hover:bg-neutral-100 transition-colors flex items-center justify-center min-w-[64px] h-[60px] cursor-pointer disabled:opacity-30"
+          >
+            {isSaving ? (
+              <span className="animate-spin">⏳</span>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+            )}
+          </button>
+
           <div className="relative flex-1 group">
             <input 
               readOnly 
@@ -100,12 +149,6 @@ const Generator = ({
             />
           </div>
 
-          {copied && (
-            <span className="absolute -top-10 left-1/2 -translate-x-1/2 bg-black text-white text-xs py-2 px-4 rounded-lg animate-in fade-in slide-in-from-bottom-2">
-              Скопировано!
-            </span>
-          )}
-
           <button onClick={onCopyClick} className="p-3 border-2 border-black rounded-2xl hover:bg-neutral-100 transition-colors flex flex-col items-center justify-center min-w-[64px] h-[60px] cursor-pointer">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -113,6 +156,14 @@ const Generator = ({
             </svg>
           </button>
         </div>
+
+        {/* ... остальной код (difficulty, length slider, settings) остается без изменений ... */}
+        
+        {copied && (
+            <span className="absolute top-20 left-1/2 -translate-x-1/2 bg-black text-white text-xs py-2 px-4 rounded-lg animate-in fade-in slide-in-from-bottom-2 z-30">
+              Скопировано!
+            </span>
+        )}
 
         <span className={`font-oswald text-xs font-bold uppercase tracking-widest self-start ml-2 mb-4 transition-colors ${
           difficulty === 'Непробиваемый' ? 'text-green-500' : 
@@ -123,96 +174,67 @@ const Generator = ({
           {difficulty}
         </span>
 
-          <div className="w-full mb-6">
-            <div className="flex justify-center items-center mb-2 gap-4">
-              <span className="font-oswald font-bold mr- uppercase tracking-widest text-sm">
-                Длина
-              </span>
-              {/* Отображение текущего числа */}
-              <span className="font-oswald font-bold text-black border-2 border-black rounded-lg px-3 py-1 text-sm">
-                {length}
-              </span>
-            </div>
-            
-            <input 
-              type="range" 
-              min="5" 
-              max="25" 
-              value={length} 
-              onChange={(e) => setLength(parseInt(e.target.value))} 
-              className="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-black"
-            />
-            
-            <div className="flex justify-between mt-1 text-[16px] font-oswald font-bold text-400 uppercase tracking-tighter">
-              <span>5</span>
-              <span>25</span>
-            </div>
+        {/* Слайдер длины */}
+        <div className="w-full mb-6">
+          <div className="flex justify-center items-center mb-2 gap-4">
+            <span className="font-oswald font-bold uppercase tracking-widest text-sm">Длина</span>
+            <span className="font-oswald font-bold text-black border-2 border-black rounded-lg px-3 py-1 text-sm">{length}</span>
           </div>
+          <input 
+            type="range" min="5" max="25" value={length} 
+            onChange={(e) => setLength(parseInt(e.target.value))} 
+            className="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-black"
+          />
+        </div>
 
-          <div className="w-full space-y-4 mb-8">
-            {[
-              { id: 'use_digits', label: 'Цифры ' },
-              { id: 'use_upper', label: 'Прописные' },
-              { id: 'use_special', label: 'Спецсимволы' },
-              { id: 'exclude_similar', label: 'Исключить похожие символы' }
-            ].map((item) => (
-              <label 
-                key={item.id} 
-                className="flex items-center gap-3 cursor-pointer group"
-                onClick={() => toggleSetting(item.id)}
-              >
-                <div className={`w-6 h-6 border-2 border-black flex items-center justify-center transition-colors ${
-                  item.id === 'exclude_similar' ? 'rounded-full' : 'rounded-sm'
-                } ${settings[item.id] ? 'bg-black' : 'bg-transparent'}`}>
-                  {settings[item.id] && (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                  )}
-                </div>
-                <span className="font-oswald font-bold uppercase tracking-widest text-sm">
-                  {item.label}
-                </span>
-              </label>
-            ))}
-          </div>
+        {/* Чекбоксы настроек */}
+        <div className="w-full space-y-4 mb-8">
+          {[
+            { id: 'use_digits', label: 'Цифры ' },
+            { id: 'use_upper', label: 'Прописные' },
+            { id: 'use_special', label: 'Спецсимволы' },
+            { id: 'exclude_similar', label: 'Исключить похожие символы' }
+          ].map((item) => (
+            <label 
+              key={item.id} 
+              className="flex items-center gap-3 cursor-pointer group"
+              onClick={() => toggleSetting(item.id)}
+            >
+              <div className={`w-6 h-6 border-2 border-black flex items-center justify-center transition-colors ${
+                item.id === 'exclude_similar' ? 'rounded-full' : 'rounded-sm'
+              } ${settings[item.id] ? 'bg-black' : 'bg-transparent'}`}>
+                {settings[item.id] && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                )}
+              </div>
+              <span className="font-oswald font-bold uppercase tracking-widest text-sm">{item.label}</span>
+            </label>
+          ))}
+        </div>
 
-          <button onClick={() => setIsSaveModalOpen(true)} className="font-oswald text-xs font-bold uppercase tracking-widest mb-6 text-[16px] cursor-pointer">Сохранить настройку</button>
-          
-          <button onClick={handleGenerate} className="font-oswald w-full bg-black text-white py-4 rounded-[2rem] text-[16px] font-bold uppercase tracking-widest shadow-xl active:scale-95 transition-all cursor-pointer">Сгенерировать</button>
-          {isSaveModalOpen && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 rounded-[40px] animate-in fade-in duration-200">
-            <div className="bg-white p-6 rounded-3xl w-[90%] shadow-2xl border-2 border-black">
+        <button onClick={() => setIsSaveModalOpen(true)} className="font-oswald text-xs font-bold uppercase tracking-widest mb-6 text-[16px] cursor-pointer">Сохранить настройку</button>
+        <button onClick={handleGenerate} className="font-oswald w-full bg-black text-white py-4 rounded-[2rem] text-[16px] font-bold uppercase tracking-widest shadow-xl active:scale-95 transition-all cursor-pointer">Сгенерировать</button>
+
+        {/* Модальное окно для пресета */}
+        {isSaveModalOpen && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 rounded-[40px]">
+            <div className="bg-white p-6 rounded-3xl w-[90%] border-2 border-black">
               <h2 className="font-oswald font-bold uppercase mb-4 text-center">Назовите пресет</h2>
               <input 
-                autoFocus
-                type="text" 
-                value={presetName}
+                autoFocus type="text" value={presetName}
                 onChange={(e) => setPresetName(e.target.value)}
-                className="w-full p-3 border-2 border-black rounded-xl mb-4 font-oswald uppercase text-sm outline-none"
+                className="w-full p-3 border-2 border-black rounded-xl mb-4 font-oswald uppercase text-sm"
               />
               <div className="flex gap-2">
-                <button 
-                  onClick={() => setIsSaveModalOpen(false)}
-                  className="flex-1 border-2 border-black py-2 rounded-xl font-oswald font-bold uppercase text-xs cursor-pointer hover:bg-neutral-100"
-                >
-                  Отмена
-                </button>
-                <button 
-                  onClick={() => {
-                    handleSavePreset();
-                    setIsSaveModalOpen(false);
-                    setPresetName('');
-                  }}
-                  className="flex-1 bg-black text-white py-2 rounded-xl font-oswald font-bold uppercase text-xs cursor-pointer hover:bg-neutral-800"
-                >
-                  Сохранить
-                </button>
+                <button onClick={() => setIsSaveModalOpen(false)} className="flex-1 border-2 border-black py-2 rounded-xl font-oswald font-bold uppercase text-xs">Отмена</button>
+                <button onClick={handleSavePreset} className="flex-1 bg-black text-white py-2 rounded-xl font-oswald font-bold uppercase text-xs">Сохранить</button>
               </div>
             </div>
           </div>
         )}
-        </div>
+    </div>
   );
 };
 
