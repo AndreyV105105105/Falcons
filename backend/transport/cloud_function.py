@@ -1,18 +1,26 @@
 import json
 import os
 import base64
+
 from core.auth_service import register_user_logic, login_user_logic
 from core.generator_service import generate_logic
-
 from core.presets_service import create_preset, get_presets, delete_preset
 from core.security import verify_token
+
+from core.passwords_service import (save_password_handler, get_passwords_handler, decrypt_password_handler,
+                                    delete_password_handler)
+from core.logger import logger
 
 
 def handler(event, context):
     """Единая точка входа для авторизации в Yandex Cloud"""
     try:
         # Ловим метод запроса (POST, GET, OPTIONS)
+        path = event.get('path', '')
         http_method = event.get('httpMethod', '')
+
+        # Логируем входящий запрос
+        logger.info(f"Входящий запрос: {http_method} {path}")
 
         if http_method == 'OPTIONS':
             return {
@@ -25,9 +33,9 @@ def handler(event, context):
                 'body': ''
             }
 
-        path = event.get('path', '')
+        # Надежная расшифровка Base64 и парсинг JSON (восстановлено из версии 6)
         raw_body = event.get('body')
-        
+
         if not raw_body:
             body = {}
         else:
@@ -59,8 +67,9 @@ def handler(event, context):
             result = login_user_logic(clean_email, clean_password, secret_key)
         elif '/generate' in path:
             result = generate_logic(body)
+
         elif '/presets' in path:
-            # Охранник
+            # Охранник пресетов
             user_id, error_response = verify_token(event.get('headers', {}))
 
             if error_response:
@@ -78,6 +87,18 @@ def handler(event, context):
                 return get_presets(user_id)
             elif '/presets/delete' in path:
                 return delete_preset(user_id, body)
+
+        elif '/passwords' in path:
+            # Маршрутизация паролей
+            if '/passwords/save' in path:
+                return save_password_handler(event)
+            elif '/passwords/get' in path:
+                return get_passwords_handler(event)
+            elif '/passwords/decrypt' in path:
+                return decrypt_password_handler(event)
+            elif '/passwords/delete' in path:
+                return delete_password_handler(event)
+
         else:
             return {
                 'statusCode': 404,
@@ -96,8 +117,9 @@ def handler(event, context):
             },
             'body': json.dumps(result)
         }
+
     except Exception as e:
-        print(f"CRITICAL ERROR: {str(e)}")
+        logger.error(f"CRITICAL ERROR: {str(e)}", exc_info=True)
         return {
             'statusCode': 500,
             'headers': {'Access-Control-Allow-Origin': '*'},

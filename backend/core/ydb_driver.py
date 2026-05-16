@@ -32,17 +32,22 @@ def init_db():
         database=YDB_DATABASE,
         credentials=credentials,
     )
-    _driver = ydb.Driver(driver_config)
-    _driver.wait(timeout=15)
+    try:
+        _driver = ydb.Driver(driver_config)
+        _driver.wait(timeout=15)
+    except TimeoutError:
+        raise RuntimeError("Не удалось подключиться к YDB (Timeout)")
     _pool = ydb.SessionPool(_driver)
 
     return _driver, _pool
+
 
 def safe_decode(val):
     """Преобразует bytes в str, если это необходимо"""
     if isinstance(val, bytes):
         return val.decode('utf-8')
     return val
+
 
 # =============================================================================
 # СОХРАНЕНИЕ ПОЛЬЗОВАТЕЛЕЙ
@@ -274,6 +279,7 @@ def get_user_presets(user_id):
                 for row in result_sets[0].rows
             ]
         return []
+
     return _pool.retry_operation_sync(query_callee)
 
 
@@ -329,20 +335,22 @@ def save_user_password(user_id, title, password, keyword):
     if _pool is None:
         init_db()
 
-    # Получаем keyword_salt из БД (по ID пользователя)
     user = find_user_by_id(user_id)
     if not user:
         raise ValueError("User not found")
 
-    keyword_salt = user.get('keyword_salt') or str(uuid.uuid4())
+    # ИСПРАВЛЕНИЕ: Если соли нет, используем ID пользователя как вечную соль.
+    # Больше никаких случайных UUID, которые теряются!
+    keyword_salt = user.get('keyword_salt')
+    if not keyword_salt:
+        keyword_salt = str(user_id)
+
     encryption_key = _derive_key_from_keyword(keyword, keyword_salt)
 
-    # Шифруем пароль (AES-256-GCM)
     aesgcm = AESGCM(encryption_key)
-    nonce = os.urandom(12)  # 96-bit nonce for GCM
+    nonce = os.urandom(12)
     encrypted_data = aesgcm.encrypt(nonce, password.encode('utf-8'), None)
 
-    # Оценка надёжности через функцию Андрея
     entropy_data = calculate_entropy(password)
     strength_score = int(entropy_data['score'])
 
@@ -358,7 +366,6 @@ def save_user_password(user_id, title, password, keyword):
         DECLARE $auth_tag AS Utf8;
         DECLARE $strength_score AS Int32;
 
-
         INSERT INTO saved_passwords (
             id, user_id, title, encrypted_data, iv, auth_tag,
             strength_score, createdAt
@@ -371,16 +378,15 @@ def save_user_password(user_id, title, password, keyword):
 
         prepared_query = session.prepare(query_text)
 
-        # Разделяем ciphertext и auth_tag
         ciphertext = encrypted_data[:-16]
         auth_tag_bytes = encrypted_data[-16:]
 
         session.transaction(ydb.SerializableReadWrite()).execute(
             prepared_query,
             {
-                "$id": password_id,
-                "$user_id": user_id,
-                "$title": title,
+                "$id": str(password_id),
+                "$user_id": str(user_id),
+                "$title": str(title),
                 "$encrypted_data": base64.b64encode(ciphertext).decode('utf-8'),
                 "$iv": base64.b64encode(nonce).decode('utf-8'),
                 "$auth_tag": base64.b64encode(auth_tag_bytes).decode('utf-8'),
@@ -443,48 +449,77 @@ def decrypt_user_password(password_id, user_id, keyword):
         DECLARE $id AS Utf8;
         DECLARE $user_id AS Utf8;
 
-        SELECT sp.encrypted_data, sp.iv, sp.auth_tag, u.keyword_salt
-        FROM saved_passwords sp
-        JOIN users u ON sp.user_id = u.id
+        SELECT 
+            sp.encrypted_data AS encrypted_data, 
+            sp.iv AS iv, 
+            sp.auth_tag AS auth_tag, 
+            u.keyword_salt AS keyword_salt
+        FROM saved_passwords AS sp
+        JOIN users AS u ON sp.user_id = u.id
         WHERE sp.id = $id AND sp.user_id = $user_id;
         """
 
         prepared_query = session.prepare(query_text)
 
+        safe_id = password_id.decode('utf-8') if isinstance(password_id, bytes) else str(password_id)
+        safe_uid = user_id.decode('utf-8') if isinstance(user_id, bytes) else str(user_id)
+
         result_sets = session.transaction(ydb.SerializableReadWrite()).execute(
             prepared_query,
-            {"$id": password_id, "$user_id": user_id},
+            {"$id": safe_id, "$user_id": safe_uid},
             commit_tx=True,
         )
 
         if result_sets and result_sets[0].rows:
             row = result_sets[0].rows[0]
+
+            def get_val(r, key):
+                if isinstance(r, dict): return r.get(key)
+                if hasattr(r, 'get'): return r.get(key)
+                return getattr(r, key, None)
+
+            enc_data = get_val(row, 'encrypted_data')
+            iv = get_val(row, 'iv')
+            tag = get_val(row, 'auth_tag')
+            salt = get_val(row, 'keyword_salt')
+
+            # ИСПРАВЛЕНИЕ: Зеркальный фолбэк на user_id, чтобы ключи совпали!
+            if not salt:
+                salt = str(user_id)
+
+            if not enc_data:
+                raise ValueError("Пароль пуст. Удалите его.")
+
+            def to_str(val):
+                return val.decode('utf-8') if isinstance(val, bytes) else str(val)
+
             return {
-                "encrypted_data": row.encrypted_data,
-                "iv": row.iv,
-                "auth_tag": row.auth_tag,
-                "keyword_salt": row.keyword_salt
+                "encrypted_data": to_str(enc_data),
+                "iv": to_str(iv),
+                "auth_tag": to_str(tag),
+                "keyword_salt": to_str(salt)
             }
+
         return None
 
     data = _pool.retry_operation_sync(query_callee_get)
 
     if not data:
-        raise ValueError("Password not found or access denied")
+        raise ValueError("Пароль не найден или нет доступа")
 
-    # Деривируем ключ и расшифровываем
+    # Теперь ключи 100% совпадут
     encryption_key = _derive_key_from_keyword(keyword, data['keyword_salt'])
     aesgcm = AESGCM(encryption_key)
 
-    encrypted_data = base64.b64decode(data['encrypted_data'])
-    nonce = base64.b64decode(data['iv'])
-    auth_tag = base64.b64decode(data['auth_tag'])
-
     try:
-        decrypted = aesgcm.decrypt(nonce, encrypted_data + auth_tag, None)
+        encrypted_data_bytes = base64.b64decode(data['encrypted_data'])
+        nonce_bytes = base64.b64decode(data['iv'])
+        auth_tag_bytes = base64.b64decode(data['auth_tag'])
+
+        decrypted = aesgcm.decrypt(nonce_bytes, encrypted_data_bytes + auth_tag_bytes, None)
         return decrypted.decode('utf-8')
     except Exception:
-        raise ValueError("Invalid keyword (decryption failed)")
+        raise ValueError("Неверный мастер-ключ или ошибка доступа")
 
 
 def delete_user_password(password_id, user_id):
