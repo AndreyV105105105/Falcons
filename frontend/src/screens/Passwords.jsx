@@ -6,31 +6,42 @@ const Passwords = ({ setScreen }) => {
     const [passwords, setPasswords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [masterKey, setMasterKey] = useState(""); 
+    const [isMasterKeyModalOpen, setIsMasterKeyModalOpen] = useState(false);
+    const [tempMasterKey, setTempMasterKey] = useState("");
 
         useEffect(() => {
         let key = localStorage.getItem('masterKey');
         
         if (!key) {
-            key = prompt("Введите ваше кодовое слово для доступа к паролям:");
-            if (key) {
-                localStorage.setItem('masterKey', key);
-            }
+            setIsMasterKeyModalOpen(true);
+        } else {
+            setMasterKey(key);
+            fetchPasswords();
         }
-        
-        setMasterKey(key || "");
-
-        const fetchPasswords = async () => {
-            try {
-                const data = await getPasswords();
-                setPasswords(data.passwords || []); 
-            } catch (error) {
-                console.error("Ошибка при загрузке паролей:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchPasswords();
     }, []);
+
+    const fetchPasswords = async () => {
+        setLoading(true);
+        try {
+            const data = await getPasswords();
+            setPasswords(data.passwords || []); 
+        } catch (error) {
+            console.error("Ошибка при загрузке паролей:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleMasterKeySubmit = () => {
+        if (!tempMasterKey) {
+            alert("Пожалуйста, введите кодовое слово");
+            return;
+        }
+        localStorage.setItem('masterKey', tempMasterKey);
+        setMasterKey(tempMasterKey);
+        setIsMasterKeyModalOpen(false);
+        fetchPasswords();
+    };
 
     const handleDelete = async (passwordId) => {
         if (!window.confirm("Удалить этот пароль?")) return;
@@ -78,6 +89,39 @@ const Passwords = ({ setScreen }) => {
                     </div>
                 )}
             </div>
+
+            {/* Модальное окно для ввода кодового слова */}
+            {isMasterKeyModalOpen && (
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 p-6">
+                    <div className="bg-white p-6 rounded-3xl w-[90%] max-w-[340px] border-2 border-black">
+                        <h2 className="font-oswald font-bold uppercase mb-4 text-center">Доступ к паролям</h2>
+                        <p className="font-oswald text-[10px] uppercase tracking-widest text-center mb-4 text-neutral-500">
+                            Введите ваше кодовое слово для расшифровки
+                        </p>
+                        <input 
+                            autoFocus type="password" value={tempMasterKey}
+                            onChange={(e) => setTempMasterKey(e.target.value)}
+                            placeholder="Кодовое слово"
+                            className="w-full p-3 border-2 border-black rounded-xl mb-4 font-oswald text-sm"
+                            onKeyDown={(e) => e.key === 'Enter' && handleMasterKeySubmit()}
+                        />
+                        <div className="flex gap-2">
+                            <button 
+                                onClick={() => setScreen('generator')} 
+                                className="flex-1 border-2 border-black py-2 rounded-xl font-oswald font-bold uppercase text-[10px] tracking-widest"
+                            >
+                                Назад
+                            </button>
+                            <button 
+                                onClick={handleMasterKeySubmit} 
+                                className="flex-1 bg-black text-white py-2 rounded-xl font-oswald font-bold uppercase text-[10px] tracking-widest"
+                            >
+                                Войти
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
