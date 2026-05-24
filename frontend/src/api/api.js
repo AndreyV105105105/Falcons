@@ -40,7 +40,7 @@ export const getPassword = async (settings) => {
   });
   
   if (!response.ok) throw new Error('Generation failed');
-  return await response.json(); // Returns {password: "...", entropy: {...}}
+  return await response.json(); 
 };
 
 export const registerUser = (email, password, masterKey) => {

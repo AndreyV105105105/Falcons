@@ -68,7 +68,6 @@ const Passwords = ({ setScreen }) => {
                             key={item.id} 
                             item={item} 
                             onDelete={handleDelete}
-                            // Передаем мастер-ключ, чтобы карточка могла выполнить decrypt[cite: 6, 8]
                             masterKey={masterKey} 
                         />
                     ))

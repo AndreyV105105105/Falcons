@@ -124,7 +124,6 @@ const Generator = ({
         <h1 className="font-oswald text-[32px] mb-6 uppercase tracking-tight text-center">Генератор пароля</h1>
 
         <div className="w-full flex items-center gap-2 mb-1">
-          {/* Новая кнопка сохранения пароля слева */}
           <button 
             onClick={handleSavePassword} 
             disabled={!password || isSaving}
@@ -156,8 +155,6 @@ const Generator = ({
             </svg>
           </button>
         </div>
-
-        {/* ... остальной код (difficulty, length slider, settings) остается без изменений ... */}
         
         {copied && (
             <span className="absolute top-20 left-1/2 -translate-x-1/2 bg-black text-white text-xs py-2 px-4 rounded-lg animate-in fade-in slide-in-from-bottom-2 z-30">

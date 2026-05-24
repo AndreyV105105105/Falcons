@@ -4,7 +4,7 @@ import { decryptPassword } from '../api/api';
 
 const PasswordCard = ({ item, onDelete, masterKey }) => {
     const [isVisible, setIsVisible] = useState(false);
-    const [decryptedPassword, setDecryptedPassword] = useState(""); // Состояние для расшифрованного пароля
+    const [decryptedPassword, setDecryptedPassword] = useState("");
     const [copied, setCopied] = useState(false);
 
     const toggleVisibility = async () => {
