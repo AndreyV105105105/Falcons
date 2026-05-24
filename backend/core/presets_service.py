@@ -1,92 +1,107 @@
 import json
-import uuid  # Для генерации уникальных ID пресетов
+import traceback
+import uuid
 from core.ydb_driver import save_user_preset, get_user_presets, delete_user_preset
+from core.decorators import require_auth
+from core.logger import logger
 
 
-def _format_response(status_code: int, response_body: dict) -> dict:
-    """
-    Внутренняя утилита
-    Автоматически упаковывает ответ в формат, который требует Yandex API Gateway.
-    """
-    return {
-        'statusCode': status_code,
-        'headers': {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'  # Защита от CORS-ошибок у фронтенда
-        },
-        'body': json.dumps(response_body)
-    }
+@require_auth
+def create_preset_handler(event, user_id, body):
+    # Дефолтные заголовки для всех ответов (как в passwords_service)
+    headers = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}
 
-
-def create_preset(user_id: str, body: dict) -> dict:
-    """
-    Обрабатывает запрос на создание нового пресета.
-    """
-    # Достаем данные от фронтенда
     preset_name = body.get('preset_name')
     length = body.get('length')
 
-    # Жесткая Валидация (Проверка на дурака)
+    # Жесткая Валидация
     if not preset_name or not isinstance(preset_name, str):
-        return _format_response(400, {"error": "Имя пресета обязательно и должно быть строкой"})
+        return {
+            'statusCode': 400,
+            'headers': headers,
+            'body': json.dumps({"error": "Имя пресета обязательно и должно быть строкой"})
+        }
 
     if not isinstance(length, int) or not (4 <= length <= 64):
-        return _format_response(400, {"error": "Длина пароля должна быть числом от 4 до 64"})
+        return {
+            'statusCode': 400,
+            'headers': headers,
+            'body': json.dumps({"error": "Длина пароля должна быть числом от 4 до 64"})
+        }
 
-    # Упаковка данных
-    preset_id = str(uuid.uuid4())  # Генерируем уникальный ID для пресета
-
-    # Собираем чистый словарь, подставляя безопасные значения по умолчанию (False),
-    # если фронтенд вдруг забыл прислать какие-то галочки.
+    # Формируем структуру данных пресета
+    preset_id = str(uuid.uuid4())
     preset_data = {
         "preset_id": preset_id,
-        "user_id": user_id,
-        "preset_name": str(preset_name).strip(),
         "length": length,
         "use_uppercase": bool(body.get('use_uppercase', False)),
-        "use_lowercase": bool(body.get('use_lowercase', False)),
         "use_numbers": bool(body.get('use_numbers', False)),
-        "use_special": bool(body.get('use_special', False))
+        "use_symbols": bool(body.get('use_symbols', False)),
+        "exclude_ambiguous": bool(body.get('exclude_ambiguous', False))
     }
 
-    # Отправка на склад
     try:
-        # Передаем словарь в драйвер БД
         save_user_preset(user_id, str(preset_name).strip(), preset_data)
-        return _format_response(200, {
-            "message": "Пресет успешно сохранен",
-            "preset_id": preset_id
-        })
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps({
+                "message": "Пресет успешно сохранен",
+                "preset_id": preset_id
+            })
+        }
     except Exception as e:
-        # Если база упала, фронтенд получит 500 ошибку
-        return _format_response(500, {"error": f"Ошибка базы данных: {str(e)}"})
+        logger.error(f"CRITICAL PRESET SAVE ERROR:\n{traceback.format_exc()}")
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({"error": "Ошибка базы данных при сохранении пресета"})
+        }
 
 
-def get_presets(user_id: str) -> dict:
-    """
-    Отдает фронтенду список всех пресетов пользователя.
-    """
+@require_auth
+def get_presets_handler(event, user_id, body):
+    headers = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}
+
     try:
-        # Получаем данные из базы
         presets_list = get_user_presets(user_id)
-        return _format_response(200, {"presets": presets_list})
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps({"presets": presets_list})
+        }
     except Exception as e:
-        return _format_response(500, {"error": f"Не удалось загрузить пресеты: {str(e)}"})
+        logger.error(f"CRITICAL PRESET GET ERROR:\n{traceback.format_exc()}")
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({"error": "Не удалось загрузить пресеты"})
+        }
 
 
-def delete_preset(user_id: str, body: dict) -> dict:
-    """
-    Удаляет пресет по его ID.
-    """
+@require_auth
+def delete_preset_handler(event, user_id, body):
+    headers = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}
     preset_id = body.get('preset_id')
 
     if not preset_id:
-        return _format_response(400, {"error": "ID пресета обязателен для удаления"})
+        return {
+            'statusCode': 400,
+            'headers': headers,
+            'body': json.dumps({"error": "Не передан ID пресета для удаления"})
+        }
 
     try:
-        # Важно передавать user_id, чтобы юзер не мог удалить чужой пресет,
-        # просто угадав чужой preset_id
         delete_user_preset(preset_id, user_id)
-        return _format_response(200, {"message": "Пресет удален"})
+        return {
+            'statusCode': 200,
+            'headers': headers,
+            'body': json.dumps({"message": "Пресет успешно удален"})
+        }
     except Exception as e:
-        return _format_response(500, {"error": f"Ошибка при удалении: {str(e)}"})
+        logger.error(f"CRITICAL PRESET DELETE ERROR:\n{traceback.format_exc()}")
+        return {
+            'statusCode': 500,
+            'headers': headers,
+            'body': json.dumps({"error": "Ошибка базы данных при удалении пресета"})
+        }

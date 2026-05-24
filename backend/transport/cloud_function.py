@@ -4,7 +4,7 @@ import base64
 
 from core.auth_service import register_user_logic, login_user_logic
 from core.generator_service import generate_logic
-from core.presets_service import create_preset, get_presets, delete_preset
+from core.presets_service import create_preset_handler, get_presets_handler, delete_preset_handler
 from core.security import verify_token
 
 from core.passwords_service import (save_password_handler, get_passwords_handler, decrypt_password_handler,
@@ -68,25 +68,15 @@ def handler(event, context):
         elif '/generate' in path:
             result = generate_logic(body)
 
-        elif '/presets' in path:
-            # Охранник пресетов
-            user_id, error_response = verify_token(event.get('headers', {}))
 
-            if error_response:
-                return {
-                    'statusCode': error_response['status'],
-                    'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'
-                    },
-                    'body': json.dumps({'error': error_response['error']})
-                }
+        elif '/presets' in path:
+            # Маршрутизация пресетов
             if '/presets/save' in path:
-                return create_preset(user_id, body)
+                return create_preset_handler(event)
             elif '/presets/get' in path:
-                return get_presets(user_id)
+                return get_presets_handler(event)
             elif '/presets/delete' in path:
-                return delete_preset(user_id, body)
+                return delete_preset_handler(event)
 
         elif '/passwords' in path:
             # Маршрутизация паролей
