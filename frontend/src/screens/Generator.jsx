@@ -13,7 +13,6 @@ const Generator = ({
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
   const [passwordTitle, setPasswordTitle] = useState('');
-  const [masterKeyInput, setMasterKeyInput] = useState('');
   const [presetName, setPresetName] = useState('');
   const [isSaving, setIsSaving] = useState(false); 
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
@@ -42,7 +41,10 @@ const Generator = ({
 
   const handleSavePassword = () => {
     if (!password) return;
-    setMasterKeyInput(masterKey || '');
+    if (!masterKey) {
+      alert("Для сохранения пароля необходимо сначала ввести кодовое слово во вкладке 'Мои пароли'");
+      return;
+    }
     setIsPasswordModalOpen(true);
   };
 
@@ -52,9 +54,8 @@ const Generator = ({
       return;
     }
 
-    let currentMasterKey = masterKeyInput;
-    if (!currentMasterKey) {
-      alert("Введите кодовое слово для шифрования");
+    if (!masterKey) {
+      alert("Кодовое слово отсутствует!");
       return;
     }
 
@@ -63,10 +64,9 @@ const Generator = ({
       await savePassword({
         title: passwordTitle,
         password: password,
-        keyword: currentMasterKey 
+        keyword: masterKey 
       });
       
-      setMasterKey(currentMasterKey);
       setIsPasswordModalOpen(false);
       setPasswordTitle('');
       setSuccessMessage("Пароль успешно зашифрован и сохранен!");
@@ -269,19 +269,6 @@ const Generator = ({
                     className="w-full p-3 border-2 border-black rounded-xl font-oswald text-sm"
                   />
                 </div>
-
-                {!masterKey && (
-                  <div>
-                    
-                    <label className="font-oswald text-[10px] uppercase tracking-widest ml-2 mb-1 block">Кодовое слово (для шифрования)</label>
-                    <input 
-                      type="password" value={masterKeyInput}
-                      onChange={(e) => setMasterKeyInput(e.target.value)}
-                      placeholder="Введите кодовое слово"
-                      className="w-full p-3 border-2 border-black rounded-xl font-oswald text-sm"
-                    />
-                  </div>
-                )}
               </div>
 
               <div className="flex gap-2 mt-6">
