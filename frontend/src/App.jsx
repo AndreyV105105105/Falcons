@@ -9,6 +9,7 @@ function App() {
   const [screen, setScreen] = useState(() => {
     return localStorage.getItem('token') ? 'generator' : 'auth';
   });
+  const [masterKey, setMasterKey] = useState("");
 
   const [length, setLength] = useState(12);
   const [settings, setSettings] = useState({
@@ -61,7 +62,7 @@ const applyPreset = (preset) => {
       )}
 
       {screen === 'registration' && (
-        <Registration setScreen={setScreen} authInputStyle={authInputStyle}/>
+        <Registration setScreen={setScreen} authInputStyle={authInputStyle} setGlobalMasterKey={setMasterKey}/>
       )}
 
       {screen === 'generator' && (
@@ -73,11 +74,13 @@ const applyPreset = (preset) => {
           toggleSetting={toggleSetting}
           isMenuOpen={isMenuOpen}
           setIsMenuOpen={setIsMenuOpen}
+          masterKey={masterKey}
+          setMasterKey={setMasterKey}
         />
       )}
 
       {screen === 'my_passwords' && (
-        <Passwords setScreen={setScreen} savedPasswords={savedPasswords}/>
+        <Passwords setScreen={setScreen} savedPasswords={savedPasswords} masterKey={masterKey} setMasterKey={setMasterKey}/>
       )}
 
       {screen === 'my_presets' && (

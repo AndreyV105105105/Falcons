@@ -2,23 +2,19 @@ import { useEffect, useState } from 'react';
 import PasswordCard from '../components/PasswordCard';
 import { getPasswords, deletePassword } from '../api/api'; //[cite: 4, 8]
 
-const Passwords = ({ setScreen }) => {
+const Passwords = ({ setScreen, masterKey, setMasterKey }) => {
     const [passwords, setPasswords] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [masterKey, setMasterKey] = useState(""); 
     const [isMasterKeyModalOpen, setIsMasterKeyModalOpen] = useState(false);
     const [tempMasterKey, setTempMasterKey] = useState("");
 
-        useEffect(() => {
-        let key = localStorage.getItem('masterKey');
-        
-        if (!key) {
+    useEffect(() => {
+        if (!masterKey) {
             setIsMasterKeyModalOpen(true);
         } else {
-            setMasterKey(key);
             fetchPasswords();
         }
-    }, []);
+    }, [masterKey]);
 
     const fetchPasswords = async () => {
         setLoading(true);
@@ -37,10 +33,8 @@ const Passwords = ({ setScreen }) => {
             alert("Пожалуйста, введите кодовое слово");
             return;
         }
-        localStorage.setItem('masterKey', tempMasterKey);
         setMasterKey(tempMasterKey);
         setIsMasterKeyModalOpen(false);
-        fetchPasswords();
     };
 
     const handleDelete = async (passwordId) => {

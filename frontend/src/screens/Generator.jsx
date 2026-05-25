@@ -4,7 +4,8 @@ import { useState } from "react";
 
 const Generator = ({ 
   length, setLength, settings, toggleSetting, 
-  isMenuOpen, setIsMenuOpen, setScreen
+  isMenuOpen, setIsMenuOpen, setScreen,
+  masterKey, setMasterKey
 }) => {
   const [password, setPassword] = useState();
   const [difficulty, setDifficulty] = useState();
@@ -41,7 +42,7 @@ const Generator = ({
 
   const handleSavePassword = () => {
     if (!password) return;
-    setMasterKeyInput(localStorage.getItem('masterKey') || '');
+    setMasterKeyInput(masterKey || '');
     setIsPasswordModalOpen(true);
   };
 
@@ -65,7 +66,7 @@ const Generator = ({
         keyword: currentMasterKey 
       });
       
-      localStorage.setItem('masterKey', currentMasterKey);
+      setMasterKey(currentMasterKey);
       setIsPasswordModalOpen(false);
       setPasswordTitle('');
       setSuccessMessage("Пароль успешно зашифрован и сохранен!");
@@ -100,6 +101,7 @@ const Generator = ({
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('masterKey');
+    setMasterKey('');
     setScreen('auth');
   }
   
@@ -268,7 +270,7 @@ const Generator = ({
                   />
                 </div>
 
-                {!localStorage.getItem('masterKey') && (
+                {!masterKey && (
                   <div>
                     
                     <label className="font-oswald text-[10px] uppercase tracking-widest ml-2 mb-1 block">Кодовое слово (для шифрования)</label>

@@ -73,7 +73,11 @@ const PasswordCard = ({ item, onDelete, masterKey }) => {
             </div>
 
             <div className="bg-neutral-50 p-2 rounded-xl border border-neutral-100 font-mono text-xs font-bold text-center tracking-widest text-neutral-600 flex items-center justify-center min-h-[34px]">
-                {isVisible ? decryptedPassword : "••••••••••••"}
+                {copied ? (
+                    <span className="text-green-500 font-sans uppercase text-[10px] tracking-widest">Скопировано!</span>
+                ) : (
+                    isVisible ? decryptedPassword : "••••••••••••"
+                )}
             </div>
         </div>
     );

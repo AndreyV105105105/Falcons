@@ -19,9 +19,6 @@ const authRequest = async (endpoint, email, password, keyword) => {
         if (data.token) {
             localStorage.setItem('token', data.token);
             localStorage.setItem('userId', data.userId);
-            if (keyword) {
-            localStorage.setItem('masterKey', keyword);
-        }
         }
 
         return data;
