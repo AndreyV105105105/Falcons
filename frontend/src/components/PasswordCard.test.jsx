@@ -19,7 +19,7 @@ describe('PasswordCard Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(window, 'alert').mockImplementation(() => {});
+
     // Mock navigator.clipboard
     Object.defineProperty(navigator, 'clipboard', {
       value: {
@@ -41,13 +41,14 @@ describe('PasswordCard Component', () => {
     expect(screen.getByText('••••••••••••')).toBeInTheDocument();
   });
 
-  it('shows alert when trying to decrypt without a masterKey', async () => {
+  it('shows custom error popup when no masterKey is provided', async () => {
     render(<PasswordCard item={mockItem} onDelete={mockOnDelete} masterKey="" />);
 
     const decryptBtn = screen.getByTitle('Показать пароль');
     fireEvent.click(decryptBtn);
 
-    expect(window.alert).toHaveBeenCalledWith('Кодовое слово отсутствует!');
+    const errorMsg = await waitFor(() => screen.getByText('Кодовое слово отсутствует'));
+    expect(errorMsg).toBeInTheDocument();
     expect(decryptPassword).not.toHaveBeenCalled();
   });
 
@@ -67,7 +68,7 @@ describe('PasswordCard Component', () => {
     expect(screen.queryByText('••••••••••••')).not.toBeInTheDocument();
   });
 
-  it('shows alert on decryption API failure', async () => {
+  it('shows custom error popup on API failure', async () => {
     decryptPassword.mockRejectedValueOnce(new Error('Network error'));
 
     render(<PasswordCard item={mockItem} onDelete={mockOnDelete} masterKey={mockMasterKey} />);
@@ -75,9 +76,8 @@ describe('PasswordCard Component', () => {
     const decryptBtn = screen.getByTitle('Показать пароль');
     fireEvent.click(decryptBtn);
 
-    await waitFor(() => {
-      expect(window.alert).toHaveBeenCalledWith('Ошибка: Network error');
-    });
+    const errorMsg = await waitFor(() => screen.getByText('Network error'));
+    expect(errorMsg).toBeInTheDocument();
   });
 
   it('copies "Сначала расшифруйте" if password is not decrypted, and shows copy status', async () => {
