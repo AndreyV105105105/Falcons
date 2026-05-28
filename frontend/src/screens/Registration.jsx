@@ -5,11 +5,10 @@ const Registration = ({authInputStyle, setScreen, setGlobalMasterKey}) => {
     const [login, setLogin] = useState("");
     const [loading, setLoading] = useState(false);
     const [password, setPassword] = useState("");
-    const [masterKey, setMasterKey] = useState(""); // Новое состояние для секретного слова
+    const [masterKey, setMasterKey] = useState("");
     const [showPassword, setShowPassword] = useState(false);
 
     const handleRegister = async () => {
-        // Простая валидация: секретное слово не должно быть пустым
         if (!masterKey.trim()) {
             alert("Пожалуйста, придумайте секретное слово. Оно нужно для защиты ваших паролей!");
             return;
@@ -17,7 +16,6 @@ const Registration = ({authInputStyle, setScreen, setGlobalMasterKey}) => {
 
         setLoading(true);
         try {
-            // Передаем masterKey в функцию регистрации
             const response = await registerUser(login, password, masterKey);
             if (response.token) {
                 localStorage.setItem('jwt_token', response.token);

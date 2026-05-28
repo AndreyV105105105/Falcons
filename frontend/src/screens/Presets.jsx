@@ -40,13 +40,11 @@ const Presets = ({ setScreen, onApply }) => {
             ) : (
                 <div className="space-y-4">
                     {presets.map((preset) => (
-                        /* Добавляем relative для позиционирования кнопки[cite: 1] */
                         <div 
                             key={preset.id} 
                             onClick={() => onApply(preset)}
                             className="relative p-4 border-2 border-black rounded-2xl cursor-pointer hover:bg-neutral-50 transition-all group"
                         >
-                            {/* Кнопка удаления в правом верхнем углу */}
                             <button
                                 onClick={(e) => handleDelete(e, preset.id)}
                                 className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center bg-white border border-neutral-200 rounded-full text-neutral-400 hover:text-red-500 hover:border-red-500 transition-colors z-10"

@@ -55,6 +55,7 @@ yarn-error.log*
 /backend/instance/
 /backend/logs/
 logs/
+123.zip
 
 # База Данных
 *.sqlite3
