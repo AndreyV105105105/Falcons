@@ -41,155 +41,113 @@ const PasswordCard = ({ item, onDelete, masterKey }) => {
         setIsDecrypting(true);
         try {
             const data = await decryptPassword(item.id, masterKey);
-            setDecryptedPassword(data.decrypted_password);
-            setIsVisible(true);
+            if (data && data.decrypted_password) {
+                setDecryptedPassword(data.decrypted_password);
+                setIsVisible(true);
+                setErrorMessage(''); // Очищаем ошибку при успехе
+            } else {
+                showError('Не удалось расшифровать');
+            }
         } catch (error) {
-            showError(error.message || 'Неверное кодовое слово');
+            // Вместо старого alert() выводим ошибку в наш встроенный UI элемент
+            showError(error.message || 'Ошибка доступа');
         } finally {
             setIsDecrypting(false);
         }
     };
 
     const onCopyClick = () => {
-        const passToCopy = decryptedPassword || 'Сначала расшифруйте';
-        handleCopy(passToCopy, setCopied);
+        if (!decryptedPassword) {
+            showError('Сначала расшифруйте');
+            return;
+        }
+        handleCopy(decryptedPassword, setCopied);
     };
 
     return (
-        <div className="relative p-4 border-2 border-neutral-100 rounded-3xl group bg-white">
+        <div className="relative p-4 border-2 border-neutral-100 rounded-3xl group bg-white hover:border-black transition-colors">
+            {/* Кнопка удаления */}
+            <button 
+                onClick={(e) => { e.stopPropagation(); onDelete(item.id); }} 
+                className="absolute top-3 right-3 text-neutral-400 hover:text-red-500 transition-colors cursor-pointer"
+                title="Удалить пароль"
+            >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+            </button>
 
-            {/* Кастомный попап ошибки */}
+            {/* Контент карточки */}
+            <div className="flex flex-col gap-1 mb-3 pr-6">
+                <span className="font-oswald text-[10px] font-bold uppercase tracking-widest text-neutral-400">Название</span>
+                <span className="font-oswald font-bold uppercase text-lg text-neutral-900 leading-tight truncate">{item.title}</span>
+            </div>
+
+            {/* Динамическая плашка ошибки (Встроенный блок вывода errorMessage) */}
             {errorMessage && (
-                <div
-                    className="absolute -top-14 left-1/2 z-50 animate-error-popup"
-                    style={{
-                        transform: 'translateX(-50%)',
-                        animation: 'errorPopup 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards',
-                    }}
-                >
-                    <div
-                        style={{
-                            background: 'linear-gradient(135deg, #1a1a1a 0%, #2d1515 100%)',
-                            border: '1.5px solid rgba(239,68,68,0.5)',
-                            borderRadius: '14px',
-                            padding: '8px 16px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            boxShadow: '0 8px 32px rgba(239,68,68,0.25), 0 2px 8px rgba(0,0,0,0.4)',
-                            whiteSpace: 'nowrap',
-                        }}
-                    >
-                        {/* Иконка замка с крестиком */}
-                        <div style={{
-                            width: '20px',
-                            height: '20px',
-                            borderRadius: '50%',
-                            background: 'rgba(239,68,68,0.15)',
-                            border: '1.5px solid rgba(239,68,68,0.6)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                        }}>
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="3" strokeLinecap="round">
-                                <line x1="18" y1="6" x2="6" y2="18"/>
-                                <line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                        </div>
-                        <span style={{
-                            fontFamily: 'Oswald, sans-serif',
-                            fontWeight: 700,
-                            fontSize: '10px',
-                            letterSpacing: '0.12em',
-                            textTransform: 'uppercase',
-                            color: '#fca5a5',
-                        }}>
-                            {errorMessage}
-                        </span>
-                        {/* Прогресс-бар */}
-                        <div style={{
-                            position: 'absolute',
-                            bottom: 0,
-                            left: 0,
-                            height: '2px',
-                            borderRadius: '0 0 14px 14px',
-                            background: 'rgba(239,68,68,0.7)',
-                            animation: 'errorProgress 3.5s linear forwards',
-                            width: '100%',
-                        }}/>
-                    </div>
-                    {/* Стрелочка */}
-                    <div style={{
-                        position: 'absolute',
-                        bottom: '-6px',
-                        left: '50%',
-                        transform: 'translateX(-50%)',
-                        width: 0,
-                        height: 0,
-                        borderLeft: '6px solid transparent',
-                        borderRight: '6px solid transparent',
-                        borderTop: '6px solid rgba(239,68,68,0.5)',
-                    }}/>
+                <div className="mb-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-xl text-center">
+                    <span className="font-oswald text-[11px] font-bold uppercase tracking-wider text-red-600 animate-pulse">
+                        ⚠️ {errorMessage}
+                    </span>
                 </div>
             )}
 
-            {/* Кнопка удаления */}
-            <button
-                onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
-                className="absolute top-2 right-2 text-neutral-400 hover:text-red-500"
-            />
-
-            <div className="flex justify-between items-start mb-2">
-                <div>
-                    <h3 className="font-oswald font-bold uppercase text-sm tracking-wide">{item.title}</h3>
+            {/* Поле отображения пароля */}
+            <div className="flex items-center justify-between gap-2 bg-neutral-50 p-2.5 rounded-2xl border border-neutral-100 h-[46px]">
+                <div className="flex-1 font-mono text-sm font-bold text-center tracking-wide truncate px-2 select-all">
+                    {isDecrypting ? (
+                        <span className="text-neutral-400 animate-pulse font-oswald uppercase text-xs tracking-widest">Дешифрация...</span>
+                    ) : isVisible ? (
+                        <span className="text-black">{decryptedPassword}</span>
+                    ) : (
+                        <span className="text-neutral-400 tracking-[0.3em]">••••••••</span>
+                    )}
                 </div>
-                <div className="flex gap-2">
+
+                <div className="flex items-center gap-1 shrink-0">
+                    {/* Кнопка Глаз */}
                     <button
                         onClick={toggleVisibility}
                         disabled={isDecrypting}
-                        className="p-2 border-2 border-black rounded-xl hover:bg-black hover:text-white transition-colors cursor-pointer disabled:opacity-50"
-                        title="Показать пароль"
+                        className="p-1.5 text-neutral-500 hover:text-black hover:bg-neutral-200/60 rounded-lg transition-all cursor-pointer disabled:opacity-50"
+                        title={isVisible ? "Скрыть" : "Показать"}
                     >
-                        {isDecrypting ? (
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="animate-spin">
-                                <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                        {isVisible ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                                <line x1="1" y1="1" x2="23" y2="23"></line>
                             </svg>
-                        ) : isVisible ? (
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
                         ) : (
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                            </svg>
                         )}
                     </button>
 
+                    {/* Кнопка Скопировать */}
                     <button
                         onClick={onCopyClick}
-                        className="p-2 border-2 border-black rounded-xl hover:bg-black hover:text-white transition-colors cursor-pointer"
-                        title="Копировать"
+                        disabled={!isVisible}
+                        className="p-1.5 text-neutral-500 hover:text-black hover:bg-neutral-200/60 rounded-lg transition-all cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-neutral-400"
+                        title={copied ? "Скопировано!" : "Копировать"}
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        {copied ? (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="text-green-600">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        ) : (
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        )}
                     </button>
                 </div>
             </div>
-
-            <div className="bg-neutral-50 p-2 rounded-xl border border-neutral-100 font-mono text-xs font-bold text-center tracking-widest text-neutral-600 flex items-center justify-center min-h-[34px]">
-                {copied ? (
-                    <span className="text-green-500 font-sans uppercase text-[10px] tracking-widest">Скопировано!</span>
-                ) : (
-                    isVisible ? decryptedPassword : '••••••••••••'
-                )}
-            </div>
-
-            <style>{`
-                @keyframes errorPopup {
-                    from { opacity: 0; transform: translateX(-50%) translateY(6px) scale(0.92); }
-                    to   { opacity: 1; transform: translateX(-50%) translateY(0)  scale(1); }
-                }
-                @keyframes errorProgress {
-                    from { width: 100%; }
-                    to   { width: 0%; }
-                }
-            `}</style>
         </div>
     );
 };
