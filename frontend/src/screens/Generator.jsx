@@ -4,14 +4,19 @@ import { useState } from "react";
 
 const Generator = ({ 
   length, setLength, settings, toggleSetting, 
-  isMenuOpen, setIsMenuOpen, setScreen
+  isMenuOpen, setIsMenuOpen, setScreen,
+  masterKey, setMasterKey
 }) => {
   const [password, setPassword] = useState();
   const [difficulty, setDifficulty] = useState();
   const [copied, setCopied] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordTitle, setPasswordTitle] = useState('');
   const [presetName, setPresetName] = useState('');
   const [isSaving, setIsSaving] = useState(false); 
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleGenerate = async () => {
     try {
@@ -34,34 +39,44 @@ const Generator = ({
     handleCopy(password, setCopied);
   };
 
-  const handleSavePassword = async () => {
+  const handleSavePassword = () => {
     if (!password) return;
+    if (!masterKey) {
+      alert("Для сохранения пароля необходимо сначала ввести кодовое слово во вкладке 'Мои пароли'");
+      return;
+    }
+    setIsPasswordModalOpen(true);
+  };
 
-    const title = prompt("Введите название для пароля:");
-    if (!title) return;
+  const confirmSavePassword = async () => {
+    if (!passwordTitle) {
+      alert("Введите название для пароля");
+      return;
+    }
 
-    let savedMasterKey = localStorage.getItem('masterKey');
-
-    if (!savedMasterKey) {
-        savedMasterKey = prompt("Кодовое слово не найдено. Введите его для шифрования:");
-        if (!savedMasterKey) return; 
-        localStorage.setItem('masterKey', savedMasterKey);
+    if (!masterKey) {
+      alert("Кодовое слово отсутствует!");
+      return;
     }
 
     setIsSaving(true);
     try {
-        await savePassword({
-            title: title,
-            password: password,
-            keyword: savedMasterKey 
-        });
-        alert("Пароль успешно зашифрован и сохранен!");
+      await savePassword({
+        title: passwordTitle,
+        password: password,
+        keyword: masterKey 
+      });
+      
+      setIsPasswordModalOpen(false);
+      setPasswordTitle('');
+      setSuccessMessage("Пароль успешно зашифрован и сохранен!");
+      setIsSuccessModalOpen(true);
     } catch (error) {
-        alert("Ошибка: " + error.message);
+      alert("Ошибка: " + error.message);
     } finally {
-        setIsSaving(false);
+      setIsSaving(false);
     }
-};
+  };
 
 
   const handleSavePreset = async () => {
@@ -76,6 +91,8 @@ const Generator = ({
       });
       setIsSaveModalOpen(false);
       setPresetName('');
+      setSuccessMessage("Настройка успешно сохранена!");
+      setIsSuccessModalOpen(true);
     } catch (error) {
       console.error("Failed to save preset:", error);
     }
@@ -84,6 +101,7 @@ const Generator = ({
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('masterKey');
+    setMasterKey('');
     setScreen('auth');
   }
   
@@ -217,17 +235,79 @@ const Generator = ({
         {/* Модальное окно для пресета */}
         {isSaveModalOpen && (
           <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 rounded-[40px]">
-            <div className="bg-white p-6 rounded-3xl w-[90%] border-2 border-black">
-              <h2 className="font-oswald font-bold uppercase mb-4 text-center">Назовите пресет</h2>
+            <div className="bg-white p-6 rounded-3xl w-[90%] max-w-[340px] border-2 border-black">
+              <h2 className="font-oswald font-bold uppercase mb-4 text-center">Назовите настройку</h2>
               <input 
                 autoFocus type="text" value={presetName}
                 onChange={(e) => setPresetName(e.target.value)}
-                className="w-full p-3 border-2 border-black rounded-xl mb-4 font-oswald uppercase text-sm"
+                className="w-full p-3 border-2 border-black rounded-xl mb-4 font-oswald text-sm"
               />
               <div className="flex gap-2">
                 <button onClick={() => setIsSaveModalOpen(false)} className="flex-1 border-2 border-black py-2 rounded-xl font-oswald font-bold uppercase text-xs">Отмена</button>
                 <button onClick={handleSavePreset} className="flex-1 bg-black text-white py-2 rounded-xl font-oswald font-bold uppercase text-xs">Сохранить</button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Модальное окно для сохранения пароля */}
+        {isPasswordModalOpen && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 rounded-[40px]">
+            <div className="bg-white p-6 rounded-3xl w-[90%] max-w-[340px] border-2 border-black">
+              <h2 className="font-oswald font-bold uppercase mb-4 text-center">Сохранить пароль</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="font-oswald text-[10px] uppercase tracking-widest ml-2 mb-1 block">Название</label>
+                  <input 
+                    autoFocus type="text" value={passwordTitle}
+                    onChange={(e) => setPasswordTitle(e.target.value)}
+                    placeholder="Напр: Google Account"
+                    className="w-full p-3 border-2 border-black rounded-xl font-oswald text-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 mt-6">
+                <button 
+                  onClick={() => setIsPasswordModalOpen(false)} 
+                  className="flex-1 border-2 border-black py-2 rounded-xl font-oswald font-bold uppercase text-xs"
+                >
+                  Отмена
+                </button>
+                <button 
+                  onClick={confirmSavePassword} 
+                  disabled={isSaving}
+                  className="flex-1 bg-black text-white py-2 rounded-xl font-oswald font-bold uppercase text-xs disabled:opacity-50"
+                >
+                  {isSaving ? "Сохранение..." : "Сохранить"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Модальное окно успеха */}
+        {isSuccessModalOpen && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 rounded-[40px] backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white p-8 rounded-3xl w-[90%] max-w-[340px] border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center animate-in zoom-in-95 duration-300">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4 border-2 border-green-500">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+              
+              <h2 className="font-oswald font-bold uppercase mb-2 text-center text-xl tracking-tight">Успешно!</h2>
+              <p className="font-oswald text-xs uppercase tracking-widest text-center mb-6 text-neutral-500 leading-relaxed">
+                {successMessage}
+              </p>
+
+              <button 
+                onClick={() => setIsSuccessModalOpen(false)} 
+                className="w-full bg-black text-white py-3 rounded-xl font-oswald font-bold uppercase text-sm tracking-[0.2em] shadow-lg active:scale-95 transition-all cursor-pointer"
+              >
+                Отлично
+              </button>
             </div>
           </div>
         )}

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { registerUser } from "../api/api";
 
-const Registration = ({authInputStyle, setScreen}) => {
+const Registration = ({authInputStyle, setScreen, setGlobalMasterKey}) => {
     const [login, setLogin] = useState("");
     const [loading, setLoading] = useState(false);
     const [password, setPassword] = useState("");
@@ -19,6 +19,9 @@ const Registration = ({authInputStyle, setScreen}) => {
             const response = await registerUser(login, password, masterKey);
             if (response.token) {
                 localStorage.setItem('jwt_token', response.token);
+                if (setGlobalMasterKey) {
+                    setGlobalMasterKey(masterKey);
+                }
                 setScreen('generator');
             } 
         } catch (err) {
