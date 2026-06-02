@@ -45,7 +45,7 @@
 
 1. Склонируйте репозиторий:
 ```bash
-   git clone [https://github.com/your-repo/falcons-pass.git](https://github.com/your-repo/falcons-pass.git)
+   git clone https://github.com/AndreyV105105105/Falcons.git
    cd falcons-pass/frontend
 ```
 
@@ -58,7 +58,7 @@
 3. Создайте файл `.env` в корне папки `frontend` и пропишите URL вашего API Gateway:
 
 ```env
-   VITE_API_BASE_URL=[https://ваша-ссылка-api-gateway.yandexcloud.net](https://ваша-ссылка-api-gateway.yandexcloud.net)
+   VITE_API_BASE_URL=[https://github.com/AndreyV105105105/Falcons-api-gateway.yandexcloud.net](https://github.com/AndreyV105105105/Falcons-api-gateway.yandexcloud.net)
 
 ```
 
