@@ -12,7 +12,6 @@ def require_auth(handler_func):
 
     @wraps(handler_func)
     def wrapper(event, *args, **kwargs):
-        # Проверка токена
         user_id, error_response = verify_token(event.get('headers', {}))
         if error_response:
             return {
@@ -21,7 +20,6 @@ def require_auth(handler_func):
                 'body': json.dumps({'error': error_response['error']})
             }
 
-        # Безопасный парсинг body
         raw_body = event.get('body', '{}')
         if event.get('isBase64Encoded'):
             raw_body = base64.b64decode(raw_body).decode('utf-8')
@@ -31,7 +29,6 @@ def require_auth(handler_func):
         except json.JSONDecodeError:
             body = {}
 
-        # Запускаем целевую функцию: теперь она получает и user_id, и готовый body
         return handler_func(event, user_id, body, *args, **kwargs)
 
     return wrapper

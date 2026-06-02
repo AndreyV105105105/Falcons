@@ -8,13 +8,11 @@ from core.logger import logger
 
 @require_auth
 def create_preset_handler(event, user_id, body):
-    # Дефолтные заголовки для всех ответов
     headers = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}
 
     preset_name = body.get('preset_name')
     length = body.get('length')
 
-    # Жесткая Валидация
     if not preset_name or not isinstance(preset_name, str):
         return {
             'statusCode': 400,
@@ -29,7 +27,6 @@ def create_preset_handler(event, user_id, body):
             'body': json.dumps({"error": "Длина пароля должна быть числом от 4 до 64"})
         }
 
-    # Формируем структуру данных пресета
     preset_id = str(uuid.uuid4())
     preset_data = {
         "preset_id": preset_id,

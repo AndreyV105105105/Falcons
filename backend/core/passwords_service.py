@@ -11,7 +11,6 @@ def save_password_handler(event, user_id, body):
     password_to_encrypt = body.get('password')
     master_key = body.get('keyword')
 
-    # Дефолтные заголовки для всех ответов
     headers = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}
 
     if not password_to_encrypt or not master_key:
@@ -30,7 +29,6 @@ def save_password_handler(event, user_id, body):
 
 @require_auth
 def get_passwords_handler(event, user_id, body):
-    # Дефолтные заголовки для всех ответов
     headers = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}
 
     try:
@@ -41,7 +39,6 @@ def get_passwords_handler(event, user_id, body):
 
         sd = lambda x: x.decode('utf-8') if isinstance(x, bytes) else x
 
-        # Формируем список
         clean_passwords = [
             {
                 "id": sd(p["id"]),
@@ -52,7 +49,6 @@ def get_passwords_handler(event, user_id, body):
             for p in raw_passwords
         ]
 
-        # Возвращаем массив под ключом "passwords"
         return {
             'statusCode': 200,
             'headers': headers,
@@ -67,7 +63,6 @@ def decrypt_password_handler(event, user_id, body):
     password_id = body.get('password_id')
     master_key = body.get('keyword')
 
-    # Дефолтные заголовки для всех ответов
     headers = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}
 
     if not password_id or not master_key:
@@ -89,18 +84,17 @@ def decrypt_password_handler(event, user_id, body):
             'body': json.dumps({"decrypted_password": decrypted_text})
         }
     except ValueError as ve:
-        # Ловим конкретно НАШИ ошибки (старый пароль, неверный ключ)
         return {
             'statusCode': 403,
             'headers': headers,
             'body': json.dumps({"error": str(ve)})
         }
     except Exception as e:
-        logger.error(f"CRITICAL ERROR:\n{traceback.format_exc()}")  # Пишем дебаг только в наши логи
+        logger.error(f"CRITICAL ERROR:\n{traceback.format_exc()}")
         return {
             'statusCode': 500,
             'headers': headers,
-            'body': json.dumps({"error": "Внутренняя ошибка сервера"})  # Юзеру отдаем стандартную фразу
+            'body': json.dumps({"error": "Внутренняя ошибка сервера"})
         }
 
 
@@ -108,7 +102,6 @@ def decrypt_password_handler(event, user_id, body):
 def delete_password_handler(event, user_id, body):
     password_id = body.get('password_id')
 
-    # Дефолтные заголовки для всех ответов
     headers = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}
 
     if not password_id:

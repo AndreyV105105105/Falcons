@@ -33,7 +33,7 @@ def generate_password(length, use_upper, use_digits, use_special, exclude_simila
         available_chars += special_chars
         password_list.append(secrets.choice(special_chars))
 
-    # Проверка длины (Выбрасываем красивую ошибку)
+    # Проверка длины
     if length < len(password_list):
         raise ValueError(f"Минимальная длина для текущих настроек: {len(password_list)}")
 
@@ -50,7 +50,6 @@ import math
 import string
 
 def calculate_entropy(password):
-    # Защита от пустой строки
     if not password:
         return {"score": 0, "level": "Слабый"}
 

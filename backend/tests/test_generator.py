@@ -17,7 +17,6 @@ def test_password_includes_numbers_and_symbols():
     pwd = generate_password(length=20, use_numbers=True, use_symbols=True)
 
     has_number = any(char.isdigit() for char in pwd)
-    # Проверка на спецсимволы
     has_symbol = any(not char.isalnum() for char in pwd)
 
     assert has_number is True
@@ -28,10 +27,8 @@ def test_exclude_ambiguous_characters():
     """Тест: если включено исключение похожих символов, их не должно быть в пароле."""
     ambiguous_chars = set("il1Lo0O")
 
-    # Генерируем очень длинный пароль, чтобы повысить вероятность появления любых символов
     pwd = generate_password(length=100, exclude_ambiguous=True)
 
-    # Проверяем пересечение множеств символов пароля и исключенных символов
     intersection = set(pwd).intersection(ambiguous_chars)
     assert len(intersection) == 0
 
@@ -42,4 +39,4 @@ def test_entropy_calculation():
 
     assert "score" in entropy_data
     assert isinstance(entropy_data["score"], (int, float))
-    assert 1 <= entropy_data["score"] <= 5  # Предполагаем шкалу от 1 до 5
+    assert 1 <= entropy_data["score"] <= 5
