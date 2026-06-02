@@ -8,7 +8,7 @@ from core.logger import logger
 
 @require_auth
 def create_preset_handler(event, user_id, body):
-    # Дефолтные заголовки для всех ответов (как в passwords_service)
+    # Дефолтные заголовки для всех ответов
     headers = {'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json'}
 
     preset_name = body.get('preset_name')
